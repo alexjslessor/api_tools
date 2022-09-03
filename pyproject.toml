@@ -1,11 +1,11 @@
 [tool.poetry]
-name = "api_tools"
-version = "0.1.0"
+name = "osint_tools"
+version = "0.1.2"
 description = ""
 authors = ["Alexander Slessor <alexjslessor@gmail.com.com>"]
 readme = "README.md"
 packages = [
-    {include = "api_tools"}
+    {include = "osint_tools"}
 ]
 
 [tool.poetry.dependencies]
