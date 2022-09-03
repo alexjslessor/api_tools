@@ -1,0 +1,13 @@
+httpx==0.22.0
+asgi-lifespan==1.0.1
+pytest-asyncio==0.18.1
+pytest-cov==3.0.0
+typer
+invoke==1.7.1
+# rich==22.2.2
+rich==12.5.1
+
+
+
+
+
