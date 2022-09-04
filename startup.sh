@@ -1,13 +1,13 @@
 #!/bin/bash
-# source ./env.sh
+source ./env.sh
 # dev_env
-# test_env
+test_env
 
 # uvicorn main:app --reload --port $PORT
 
 run_tests() {
-    py.test -s tests/four_chan/test_one.py
-    # py.test -s tests/test_seed_collections.py
+    # py.test -s tests/four_chan/test_one.py
+    py.test -s tests/mongo_db/test_chan_insert.py
 }
 run_tests
 

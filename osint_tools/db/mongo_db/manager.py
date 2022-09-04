@@ -48,8 +48,18 @@ class MongoCrud(object):
         non_system = {"name": {"$regex": r"^(?!system\.)"}}
         return await self.db.list_collection_names(filter=non_system)
 
-    async def create_single_index(self, db) -> Any:
-        pass
+    async def create_unique_idx(self, db, field: str) -> Any:
+        """a missing property will be added to the index as if it the value of that property were null.
+
+        Args:
+            db (_type_): _description_
+            field (str): _description_
+
+        Returns:
+            Any:
+        """
+        res = await db.create_index(field, unique=True)
+        return res
 
     async def create_multi_index(self, db) -> Any:
         pass
@@ -119,6 +129,9 @@ class MongoCrud(object):
         results: List, 
         is_testing: bool = False
         ) -> Any:
+        '''
+        https://pymongo.readthedocs.io/en/stable/examples/bulk.html#ordered-bulk-write-operations
+        '''
         if is_testing:
             try:
                 await db.drop_collection(collection_name)

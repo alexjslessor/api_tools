@@ -1,7 +1,10 @@
 from .base import *
 
 
-# string Enum with 4chan board name (e.g. 'wg', 'v', 'b', 'pol', 's', 'h', 'c', 'e', 'int', 'g', 'k', 'o', 'u', 'vg', 'r9k', 's4s', 'cm', 'hm', 'lgbt', 'sci', 'wsg', 'adv', 'an', 'out', 'trv', 'sp', 'soc', 'fit', 'biz', 'fa', 'int', 'pol', 's4s', 'tg', 'w', 'wg', 'wsg', 'x')
+# string Enum with 4chan board name (
+# e.g.  'wg', 'v', 'b', 'pol', 's', 'h', 'c', 'e', 'int', 'g', 'k', 'o', 'u', 'vg', 
+#       'r9k', 's4s', 'cm', 'hm', 'lgbt', 'sci', 'wsg', 'adv', 'an', 'out', 'trv', 
+#       'sp', 'soc', 'fit', 'biz', 'fa', 'int', 'pol', 's4s', 'tg', 'w', 'wg', 'wsg', 'x')
 class Board(str, Enum):
     wg = 'wg'
     v = 'v'
@@ -84,6 +87,12 @@ class CatalogBase(BaseModel):
     unique_ips: int = Field(None, description="OP only | Number of unique posters in a thread | any integer")
     m_img: int = Field(None, description="any post that has a mobile-optimized image` | Mobile optimized image exists for post | 1 or not set")
 
+    # def __unicode__(self):
+        # return f'{self.com}'
+
+    # def __repr__(self):
+    #     return f'{self.com}'
+
 class CatalogThread(CatalogBase):
     '''
     Helps us keep code DRY
@@ -91,4 +100,8 @@ class CatalogThread(CatalogBase):
     - Repeat
     - Yourself
     '''
+    board: Board
     last_replies: List[CatalogBase] = []# catalog OP only | JSON representation of the most recent replies to a thread | array of JSON post objects")
+
+    # def __repr__(self):
+        # return f'{self.board}'

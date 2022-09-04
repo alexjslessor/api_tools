@@ -4,18 +4,55 @@ import json
 import httpx
 import requests
 # from fastapi.encoders import jsonable_encoder
+import urllib.parse
+from time import sleep
 
-def get_catalog(board: Board):
+def get_catalog(board: Board) -> List[CatalogThread]:
     url = f'https://a.4cdn.org/{board}/catalog.json'
     data = requests.get(url).json()
     all_posts = []
     for page in data:
         for thread in page['threads']:
+            '''attach board to thread'''
+            thread['board'] = board
             all_posts.append(CatalogThread(**thread))
     return all_posts
 
 
 
+def catalog_image_generator(board: Board):
+    url = f'https://a.4cdn.org/{board}/catalog.json'
+    r = requests.get(url).json()
+    lst = []
+    for idx, page in enumerate(r):
+        for thread in r[idx]['threads']:
+            if 'last_replies' in thread:
+                for comment in thread['last_replies']:
+                    if 'ext' in comment and 'tim' in comment:
+                        url = 'http://i.4cdn.org/{0}/{1}{2}'.format(
+                            board, 
+                            str(comment['tim']), 
+                            str(comment['ext'])
+                        )
+                        lst.append(url)
+    print(lst)
+    print(len(lst))
+    for i in lst:
+        yield i
+
+def iter_img_lst():
+    counter = 0
+    for img in catalog_image_generator():
+        sleep(1.01)
+        file_name = img.split('/')[-1]
+        filename, headers = urllib.request.urlretrieve(img, f'./chan_images/{file_name}')
+        counter += 1
+        print(f'{counter}: {filename} {headers}')
+
+
+
+# if __name__ == "__main__":
+    # iter_img_lst()
 
 
 

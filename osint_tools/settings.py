@@ -26,7 +26,7 @@ class _BaseSettings(BaseSettings):
 
     AWS_REGION: str = environ.get('AWS_REGION')
     MONGO_URI: str = environ.get('MONGO_URI')
-    MONGO_DB_NAME: str = environ.get('MONGO_DB_NAME', 'develop_db')
+    MONGO_DB_NAME: str = environ.get('MONGO_DB_NAME')
 
     # PROD_URL: HttpUrl = 'https://asdasdasd.com'
 

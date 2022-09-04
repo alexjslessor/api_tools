@@ -5,24 +5,10 @@ from ..conftest import *
 class Test_Dependancies:
 
     async def test_get_chan(self):
-        data = get_catalog(Board.b)
+        data = get_catalog(Board.pol)
         assert data is not None
         assert len(data) > 0
-        pprint(data)
-        # print(jsonable_encoder(data))
-
-
-
-# insert json array into mongodb
-# async def insert_json_array(collection, json_array):
-#     await collection.insert_many(json_array)
-#     return True
-
-
-
-
-
-
+        print(data[:1])
 
 
 
