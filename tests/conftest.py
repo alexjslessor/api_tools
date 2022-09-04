@@ -1,7 +1,7 @@
 from httpx import AsyncClient
 import pytest
 import asyncio
-import httpx
+# import httpx
 from typing import Dict, Any, List
 from asgi_lifespan import LifespanManager
 from pydantic import *
@@ -10,17 +10,18 @@ from pprint import pprint
 #     HTTP_404_NOT_FOUND, 
 #     HTTP_422_UNPROCESSABLE_ENTITY, 
 #     HTTP_200_OK,
-#     HTTP_400_BAD_REQUEST)
-# from pymongo import (
-#     InsertOne, 
-#     # DeleteOne)
-# from fastapi_tools.db.mongo_db.manager import *
+#     HTTP_400_BAD_REQUEST
+# )
 # from bson import Decimal128
-from osint_tools import *
-# from backend.settings import get_settings
+from osint_tools.db import *
+from osint_tools.api import *
+from osint_tools.settings import get_settings
 
-# settings = get_settings()
-# app = create_app()
+settings = get_settings()
+
+mon_db = MongoCrud(settings.MONGO_URI, settings.MONGO_DB_NAME)
+db = mon_db.get_mongo_db()
+
 
 @pytest.fixture(scope="session")
 def event_loop():

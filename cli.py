@@ -18,8 +18,6 @@ def build_publish():
     if result.ok:
         rprint(result.stdout)
 
-
-
 @app.command()
 def build_install():
     cmd = 'rm -rf dist && poetry build && pip install dist/*.whl --force-reinstall'

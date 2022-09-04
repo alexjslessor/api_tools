@@ -1,24 +1,9 @@
 from functools import lru_cache
-from pydantic import BaseSettings, HttpUrl
+from pydantic import BaseSettings
 from os import environ
-from typing import List, Callable
-# import os.path
-# from pathlib import Path
-# import re
+from typing import List
 
 class _BaseSettings(BaseSettings):
-    # TITLE: str = 'title'
-    # DOCS_URL: str = '/docs'
-    # OPENAPI_URL: str = '/openapi'
-    # REDOC_URL: str = '/redoc'
-
-    # V1_PREFIX = "/"
-    # TAGS: List[str] = [""]
-    # CORS_ALLOW_CREDENTIALS: bool = True
-    # CORS_ALLOW_METHODS: List[str] = ['*']
-    # CORS_ALLOW_HEADERS: List[str] = ['*']
-    # CORS_ORIGINS: List[str] = ['*']
-
     ENUM_ERROR = {'detail': "value is not a valid enumeration member; permitted: 'male', 'female'"}
     FILE_TYPE_ERROR = 'Upload File Error: Incorrect File Type.'
     # INVALID_DOC_ERR: Callable = lambda x: f"{x}: Text PDF or Invalid File"
@@ -40,7 +25,7 @@ class _BaseSettings(BaseSettings):
     BUCKET_NAME: str = f'{APP_NAME}-{APP_VERSION}-{ENV_NAME}-{INPUT_BUCKET}'
 
     AWS_REGION: str = environ.get('AWS_REGION')
-    MONGO_URI_MEDIC: str = environ.get('MONGO_URI_MEDIC')
+    MONGO_URI: str = environ.get('MONGO_URI')
     MONGO_DB_NAME: str = environ.get('MONGO_DB_NAME', 'develop_db')
 
     # PROD_URL: HttpUrl = 'https://asdasdasd.com'
