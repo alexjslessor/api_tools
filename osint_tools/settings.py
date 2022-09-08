@@ -21,6 +21,10 @@ class _BaseSettings(BaseSettings):
     APP_VERSION: str = environ.get("APP_VERSION")
     ENV_NAME: str = environ.get("ENV_NAME")
 
+    GMAIL_APP_PASSWORD: str = environ.get("GMAIL_APP_PASSWORD")
+    TEST_EMAIL: str = environ.get("TEST_EMAIL")
+
+
     INPUT_BUCKET: str = environ.get('INPUT_BUCKET')
     BUCKET_NAME: str = f'{APP_NAME}-{APP_VERSION}-{ENV_NAME}-{INPUT_BUCKET}'
 
