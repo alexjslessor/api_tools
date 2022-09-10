@@ -1,17 +1,19 @@
+
 from ..base_email import *
 from imaplib import IMAP4_SSL
 import email
+from email.header import decode_header
+
 from datetime import datetime
-from typing import List, Tuple
+from typing import List, Tuple, Any
 from contextlib import contextmanager
 import os
 from datetime import datetime
-
+from pprint import pprint
 '''Instructions:
 1. create app password
 https://support.google.com/accounts/answer/185833
 '''
-
 @contextmanager
 def IMAP4_conn_manager(
     host: str = None,
@@ -33,77 +35,105 @@ class EmailAcct:
         self, 
         account_email: str = None,
         app_password: str = None, 
-        default_mailbox: str = 'INBOX',
-        host: str = 'imap.gmail.com'):
+        which_mailbox: str = 'INBOX',
+        host: str = 'imap.gmail.com'
+        ):
+        
+        self.mailbox = which_mailbox
 
         with IMAP4_conn_manager(
-            host=host,
-            account_email=account_email, 
-            app_password=app_password) as conn:
+            host=host, account_email=account_email, app_password=app_password) as conn:
             conn.select()
             self.conn = conn
-            self.mail = self.conn
 
+    @property
+    def logout(self):
+        try:
+            self.conn.logout()
+        except IMAP4_SSL.error as err:
+            raise Exception(f'Logout Error: {err}')
 
     @classmethod
     def from_gmail(cls, app_password, default_mailbox):
         return cls('imap.gmail.com', app_password, default_mailbox)
 
     @property
-    def list_inboxes(self) -> Tuple[str, List[bytes]]:
-        return self.conn.list()
-
-    @property
-    def conn_logout(self):
-        try:
-            self.conn.logout()
-        except IMAP4_SSL.error as err:
-            raise Exception(f'Logout Error: {err}')
-
-    @property
-    def parse_inbox_names(self):
-        inbox_name = []
-        for item in self.list_inboxes[1]:
-            text = item.decode('utf8')
-            inbox_name.append(text)
-        return inbox_name
+    def list_inboxes(self) -> List[str]:
+        box_bytes = self.conn.list()
+        decoded_boxes = [item.decode('utf-8') for item in box_bytes[1]]
+        return [box.split('" "')[1].replace('"', '') for box in decoded_boxes]
 
     @property
     def get_namespace(self):
         return self.conn.namespace()
 
-    def list_mail(self):
-        self.mail.list()
+    @property
+    def total_emails(self):
+        status, messages = self.conn.select('inbox')
+        return int(messages[0])
+
+
+    def delete_emails(self, email_address: str = None):
+        # select the mailbox I want to delete in
+        # if you want SPAM, use imap.select("SPAM") instead
+        self.conn.select("INBOX")
+        # search for specific mails by sender
+        status, messages = self.conn.search(None, f'(FROM "{email_address}")')
+        # # to get mails by subject
+        # status, messages = imap.search(None, 'SUBJECT "Thanks for Subscribing to our Newsletter !"')
+        # # to get mails after a specific date
+        # status, messages = self.conn.search(None, 'SINCE "01-JAN-2020"')
+        # # to get mails before a specific date
+        # status, messages = imap.search(None, 'BEFORE "01-JAN-2020"')
+        # convert messages to a list of email IDs
+        messages = messages[0].split(b' ')
+        print(messages)
+        # for mail in messages:
+        #     _, msg = self.conn.fetch(mail, "(RFC822)")
+        #     # you can delete the for loop for performance if you have a long list of emails
+        #     # because it is only for printing the SUBJECT of target email to delete
+        #     for response in msg:
+        #         if isinstance(response, tuple):
+        #             msg = email.message_from_bytes(response[1])
+        #             # decode the email subject
+        #             subject = decode_header(msg["Subject"])[0][0]
+        #             if isinstance(subject, bytes):
+        #                 # if it's a bytes type, decode to str
+        #                 subject = subject.decode()
+        #             print("Deleting", subject)
+        #     # mark the mail as deleted
+        #     self.conn.store(mail, "+FLAGS", "\\Deleted")
+        #     # permanently remove mails that are marked as deleted
+        #     # from the selected mailbox (in this case, INBOX)
+        #     self.conn.expunge()
+        #     # close the mailbox
+        #     self.conn.close()
+        #     # logout from the account
+        #     self.conn.logout()
+
+
+    def get_unique_sender_emails(
+        self, 
+        neg_list: List[Any],
+        which_mailbox: str = 'INBOX'
+        ):
+        self.conn.list()
         # list of "folders" aka labels in gmail.
         # self.mail.select("[Gmail]/Trash") # connect to inbox.
-        self.mail.select("inbox") # connect to inbox.
-        # result: 'OK'
+        self.conn.select(which_mailbox) # connect to inbox.
         # data: [b'1, 2, 3, ..., 1282'] index of all emails in all folders
-        result, data = self.mail.search(None, "ALL")
+        result, data = self.conn.search(None, "ALL")
         ids = data[0] # data is a list.
         id_list = ids.split() # ids is a space separated string
         # fetch the email body (RFC822) for the given ID
+        unique_senders = set()
         for i in id_list:
             # print(i)
-            result, data = self.mail.fetch(i, "(RFC822)")
+            result, data = self.conn.fetch(i, "(RFC822)")
             email_message = email.message_from_bytes(data[0][1])
-            print(email_message['From'], email_message['Subject'], email_message['Date'])
-            # print(email_message['From'], email_message['Subject'], email_message['Date'], email_message['To'], email_message['Cc'], email_message['Bcc'], email_message['Message-ID'], email_message['In-Reply-To'], email_message['References'], email_message['X-GM-THRID'], email_message['X-Gmail-Labels'], email_message['X-GM-MSGID'], email_message['X-GM-LABELS'])
-
-        # result, data = self.mail.fetch(latest_email_id, "(RFC822)") 
-        # raw_email = data[0][1].decode("utf-8")
-        # email_message = email.message_from_string(raw_email)
-        # return email_message.as_string()
-        # return email_message.get_payload()
-        # return email_message.get_all('Subject', [])
-
-        # for item in email_message.walk():
-            # i = item.values()
-            # i = item.items()
-            # print(i)
-            # print(item.get_params())
-            # filename = item.get_filename()
-
+            unique_senders.add(email_message['From'])
+            pprint(unique_senders)
+        return unique_senders
 
     def get_recent(self):
         # Prompt server for an update. 
@@ -139,12 +169,13 @@ class EmailAcct:
         raw_email = data[0][1].decode("utf-8")
         return raw_email
 
-    def search_emails(self, search_term: str):
+    def search_emails(self, search_term: str) -> Any:
         self.conn.select()
         email_ids = self._search_params(search_term)
-        # logger.info(f'search ids: {email_ids}')
-        raw_email = self.get_raw_email(email_ids)
-        return raw_email
+        print(f'found {len(email_ids)} emails')
+        # logger.info(f'found: {len(email_ids)} emails')
+        # raw_email = self.get_raw_email(email_ids)
+        # return raw_email
 
 
     def save_as_local(self, filename, payload):
@@ -190,6 +221,9 @@ class EmailAcct:
             return err
 
 
+
+
+
 class Gmail:
 
     def __init__(self):
@@ -228,7 +262,6 @@ class Gmail:
         # list of "folders" aka labels in gmail.
         # self.mail.select("[Gmail]/Trash") # connect to inbox.
         self.mail.select("inbox") # connect to inbox.
-        
         # result: 'OK'
         # data: [b'1, 2, 3, ..., 1282'] index of all emails in all folders
         # result, data = self.mail.search(None, "ALL")
