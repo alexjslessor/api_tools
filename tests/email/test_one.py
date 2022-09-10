@@ -24,15 +24,17 @@ class Test_Dependancies:
     SEARCH_BY_SUBJECT_2 =  '(SUBJECT "Email Attachment")'
     SEARCH_BY_EMAIL =  '(FROM "IQalerts@questrade.com")'
     M1 = '"[Gmail]/Starred"'
+    M2 = 'politics'
 
     CONN = EmailAcct(
         account_email=settings.TEST_EMAIL,
-        app_password=settings.GMAIL_APP_PASSWORD
-    )
+        app_password=settings.GMAIL_APP_PASSWORD)
 
-    async def test_delete_emails(self):
-        emails = self.CONN.delete_emails(email_address=self.SEARCH_BY_EMAIL)
+    async def test_move_email(self):
+        emails = self.CONN.move_email()
 
+    # async def test_delete_emails(self):
+        # emails = self.CONN.delete_emails(email_address=self.SEARCH_BY_EMAIL)
 
     # async def test_list_boxes(self):
         # box_bytes = self.CONN.list_inboxes

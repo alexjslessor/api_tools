@@ -3,7 +3,7 @@ from ..base_email import *
 from imaplib import IMAP4_SSL
 import email
 from email.header import decode_header
-
+import re
 from datetime import datetime
 from typing import List, Tuple, Any
 from contextlib import contextmanager
@@ -221,6 +221,31 @@ class EmailAcct:
             return err
 
 
+    def parse_uid(self, data):
+        pattern_uid = re.compile(r'\d+ \(UID (?P<uid>\d+)\)')
+        match = pattern_uid.match(data)
+        return match.group('uid')
+
+    def move_email(self, to_mailbox: str='text_mailbox'):
+        self.conn.select(mailbox='inbox', readonly=False)
+        resp, items = self.conn.search(None, 'All')
+        email_ids  = items[0].split()
+        latest_email_id = email_ids[-1]
+
+        # fetch the email body (RFC822) for the given ID
+        result, message = self.conn.fetch(latest_email_id, "(RFC822)")
+        email_message = email.message_from_bytes(message[0][1])
+        print(email_message['Subject'])
+
+        # fetch uid of the latest email
+        resp, message_id = self.conn.fetch(latest_email_id, "(UID)")
+        decoded_id = message_id[0].decode('utf-8')
+        msg_uid = self.parse_uid(decoded_id)
+        # print(msg_uid)
+        result = self.conn.uid('COPY', msg_uid, to_mailbox)
+        if result[0] == 'OK':
+            mov, data = self.conn.uid('STORE', msg_uid , '+FLAGS', '(\Deleted)')
+            self.conn.expunge()
 
 
 
