@@ -1,5 +1,8 @@
 from .base import *
 
+from redis_om import HashModel
+from typing import Optional
+import datetime
 
 # string Enum with 4chan board name (
 # e.g.  'wg', 'v', 'b', 'pol', 's', 'h', 'c', 'e', 'int', 'g', 'k', 'o', 'u', 'vg', 
@@ -39,6 +42,54 @@ class Board(str, Enum):
     tg = 'tg'
     w = 'w'
     x = 'x'
+
+# write a class called CatalogBaseRedis that inherits from HashModel
+# and has all of the fields from CatalogBase with a default value of None on each field
+# class CatalogBaseRedis(HashModel):
+    # no: int = None
+    # now: Optional[str] = None
+    # time: Optional[int] = None
+    # resto: Optional[int] = None
+    # sticky: Optional[int] = None
+    # closed: Optional[int] = None
+    # archived: Optional[int] = None
+    # name: Optional[str] = None
+    # trip: Optional[str] = None
+    # id: Optional[str] = None
+    # capcode: Optional[str] = None
+    # country: Optional[str] = None
+    # country_name: Optional[str] = None
+    # sub: Optional[str] = None
+    # com: Optional[str] = None
+    # tim: Optional[int] = None
+    # filename: Optional[str] = None
+    # ext: Optional[str] = None
+    # fsize: Optional[int] = None
+    # md5: Optional[str] = None
+    # w: Optional[int] = None
+    # h: Optional[int] = None
+    # tn_w: Optional[int] = None
+    # tn_h: Optional[int] = None
+    # filedeleted: Optional[int] = None
+    # spoiler: Optional[int] = None
+    # custom_spoiler: Optional[int] = None
+    # omitted_posts: Optional[int] = None
+    # omitted_images: Optional[int] = None
+    # replies: Optional[int] = None
+    # images: Optional[int] = None
+    # bumplimit: Optional[int] = None
+    # imagelimit: Optional[int] = None
+    # last_modified: Optional[int] = None
+    # tag: Optional[str] = None
+    # semantic_url: Optional[str] = None
+    # since4pass: Optional[int] = None
+
+# write a class called CatalogThreadRedis that inherits from CatalogBaseRedis
+# class CatalogThreadRedis(CatalogBaseRedis):
+#     board: Board
+#     # last_replies: List[CatalogBaseRedis] = []
+
+
 
 
 

@@ -6,6 +6,8 @@ import requests
 # from fastapi.encoders import jsonable_encoder
 import urllib.parse
 from time import sleep
+from typing import Any
+
 
 def get_catalog(board: Board) -> List[CatalogThread]:
     url = f'https://a.4cdn.org/{board}/catalog.json'

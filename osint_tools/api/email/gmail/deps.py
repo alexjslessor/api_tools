@@ -30,6 +30,9 @@ def IMAP4_conn_manager(
 
 
 class EmailAcct:
+    
+    BODY: str = "(RFC822)"
+    UID: str = "(UID)"
 
     def __init__(
         self, 
@@ -72,6 +75,22 @@ class EmailAcct:
         status, messages = self.conn.select('inbox')
         return int(messages[0])
 
+    def get_recent(self):
+        # Prompt server for an update. 
+        # Returned data is None if no new messages, 
+        # else value of RECENT response.
+        new_emails = self.conn.recent()
+        return new_emails
+
+    def create_new_mailbox(self, new_mailbox_name):
+        '''
+        Create new mailbox by name.
+        If mailbox exists will fail.
+
+        on failure: ('NO', [b'[ALREADYEXISTS] Duplicate folder name text_mailbox (Failure)'])
+        '''
+        m = self.conn.create(new_mailbox_name)
+        return m
 
     def delete_emails(self, email_address: str = None):
         # select the mailbox I want to delete in
@@ -134,23 +153,6 @@ class EmailAcct:
             unique_senders.add(email_message['From'])
             pprint(unique_senders)
         return unique_senders
-
-    def get_recent(self):
-        # Prompt server for an update. 
-        # Returned data is None if no new messages, 
-        # else value of RECENT response.
-        new_emails = self.conn.recent()
-        return new_emails
-
-    def create_new_mailbox(self, new_mailbox_name):
-        '''
-        Create new mailbox by name.
-        If mailbox exists will fail.
-
-        on failure: ('NO', [b'[ALREADYEXISTS] Duplicate folder name text_mailbox (Failure)'])
-        '''
-        m = self.conn.create(new_mailbox_name)
-        return m
 
     def _search_params(self, params):
         try:

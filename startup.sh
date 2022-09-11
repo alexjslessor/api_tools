@@ -1,6 +1,6 @@
 #!/bin/bash
 source ./env.sh
-# dev_env
+
 test_env
 
 # uvicorn main:app --reload --port $PORT
@@ -8,8 +8,8 @@ test_env
 run_tests() {
     # py.test -s tests/four_chan/test_one.py
     # py.test -s tests/mongo_db/test_chan_insert.py
-    py.test -s tests/email/test_one.py
-
+    # py.test -s tests/email/test_one.py
+    py.test -s tests/redis_chan/test_one.py
 }
 run_tests
 
