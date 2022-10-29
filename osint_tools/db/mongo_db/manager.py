@@ -32,7 +32,6 @@ class MongoCrud(object):
             Iterator[AsyncIOMotorDatabase]: _description_
         """
         '''this throws TypeError: 'AsyncIOMotorDatabase' object is not iterable'''
-        # yield self.db
         return self.db
 
     @property
@@ -75,15 +74,13 @@ class MongoCrud(object):
         # resp = await db.create_indexes([index1, index2])
         # return ''
 
-    async def create_collection(self, db, name):
-        return await db.create_collection(name)
+    # async def create_collection(self, db, name):
+        # return await db.create_collection(name)
 
-    async def count_docs(self, db) -> int:
-        count = await db.count_documents({})
-        return count
+    # async def count_docs(self, db) -> int:
+        # count = await db.count_documents({})
+        # return count
 
-    async def clear_collection(self, db, collection_name):
-        pass
 
     async def drop_collection(self, db, collection_name) -> Any:
         dropped = await db.drop_collection(collection_name)
@@ -266,129 +263,33 @@ class MongoCrud(object):
         except Exception as e:
             return e
 
-    async def read(
-        self, 
-        db,
-        search_by = None,
-        filter_by = None,
-        # model = None, 
-        ):
-        """
-        Read Document with .find()
-
-        https://pymongo.readthedocs.io/en/stable/api/pymongo/collection.html#pymongo.collection.Collection.find
-
-        Args:
-            db (_type_): _description_
-            search_by (_type_, optional): _description_. Defaults to None.
-            filter_by (_type_, optional): _description_. Defaults to None.
-
-        Returns:
-            _type_: _description_
-        """
-        try:
-            doc = db.find(search_by, filter_by)
-            # if model:
-                # return [model(**raw) async for raw in doc]
-            return [raw async for raw in doc]
-        except Exception as e:
-            return e
-
     # async def read(
     #     self, 
-    #     search_by: dict,
-    #     filter_by: dict, 
-    #     db
+    #     db,
+    #     search_by = None,
+    #     filter_by = None,
+    #     # model = None, 
     #     ):
+    #     """
+    #     Read Document with .find()
+
+    #     https://pymongo.readthedocs.io/en/stable/api/pymongo/collection.html#pymongo.collection.Collection.find
+
+    #     Args:
+    #         db (_type_): _description_
+    #         search_by (_type_, optional): _description_. Defaults to None.
+    #         filter_by (_type_, optional): _description_. Defaults to None.
+
+    #     Returns:
+    #         _type_: _description_
+    #     """
     #     try:
-    #         if (doc := await db.find(search_by, filter_by)) is not None:
-    #             return doc
-    #         else:
-    #             raise HTTPException(404, detail='Not Found')
+    #         doc = db.find(search_by, filter_by)
+    #         # if model:
+    #             # return [model(**raw) async for raw in doc]
+    #         return [raw async for raw in doc]
     #     except Exception as e:
     #         return e
 
 
-    async def insert_or_update_many_v1(self):
-        pass
-        # query = db['analytics'].find()
-        # print(query)
-        # ids = []
-        # requests = []
-        # async for item in query:
-        #     ids.append(item['_id'])
-        #     requests.append(ReplaceOne(
-        #         {'_id': item['_id']}, 
-        #         item, 
-        #         upsert=True))
-        # print(ids)
 
-
-
-
-
-# class Collection(metaclass=ABCMeta):
-
-    # __collection__ = None
-
-    # @classmethod
-    # @property
-    # def collection(cls):
-    #     if cls.__collection__ is None:
-    #         raise ValueError('collection name is invalid')
-    #     return cls.__collection__
-
-    # @abstractmethod
-    # def document(self) -> dict:
-    #     raise NotImplementedError('you have to define document()')
-
-    # @classmethod
-    # async def find(cls) -> list:
-    #     return await db[cls.collection].find().to_list(None)
-
-    # @classmethod
-    # async def get(cls, query: dict) -> dict:
-    #     return await db[cls.collection].find_one(query)
-
-    # async def create(self) -> dict:
-    #     await db[self.collection].insert_one(self.document())
-    #     return self.document()
-
-    # async def update(self, id: ObjectId, update: dict = {}) -> dict:
-    #     update = self.document()
-    #     del update['_id'], update['updated_at']
-    #     await db[self.collection].update_one({'_id': id}, {'$set': update})
-    #     return await self.get({'_id': id})
-
-    # async def delete(self, id: ObjectId) -> None:
-    #     return await db[self.collection].delete_one({'_id': id})
-
-
-# class Model(BaseModel):
-#     id: ObjectId = Field(default_factory=ObjectId, alias="_id")
-#     created_at: datetime = datetime.now()
-#     updated_at: datetime = datetime.now()
-
-#     def document(self) -> dict:
-#         return self.dict(by_alias=True)
-
-#     @classmethod
-#     def model(cls, document: Union[dict, list, None]):
-#         if not document:
-#             return document
-#         if type(document) is dict:
-#             return cls(**dict(document))
-#         if type(document) is list:
-#             return [cls(**dict(doc)) for doc in document]
-
-#     class Config:
-#         allow_population_by_field_name = True
-#         arbitrary_types_allowed = True
-#         json_encoders = {
-#             ObjectId: str,
-#             datetime: lambda dt: dt.isoformat()
-#         }
-
-
-# class Document(Model, Collection):
-#     pass

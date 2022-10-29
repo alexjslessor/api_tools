@@ -1,23 +1,24 @@
 from ..base import *
-import asyncio
 import json
 import httpx
 import requests
-# from fastapi.encoders import jsonable_encoder
 import urllib.parse
 from time import sleep
-from typing import Any
 
 
-def get_catalog(board: Board) -> List[CatalogThread]:
-    url = f'https://a.4cdn.org/{board}/catalog.json'
+def get_catalog(board: Board, as_dict: bool = False) -> List[CatalogThread]:
+    url = f'https://a.4cdn.org/{Board[board]}/catalog.json'
     data = requests.get(url).json()
     all_posts = []
     for page in data:
         for thread in page['threads']:
             '''attach board to thread'''
             thread['board'] = board
-            all_posts.append(CatalogThread(**thread))
+            if as_dict:
+                all_posts.append(CatalogThread(**thread).dict())
+            else:
+                all_posts.append(CatalogThread(**thread))
+
     return all_posts
 
 

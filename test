@@ -1,0 +1,55 @@
+#!/bin/bash
+source ./env.sh
+test_env
+
+# uvicorn main:app --reload --port $PORT
+
+test_redis() {
+    # python scratch.py
+    # python r_search.py
+    python blog_post.py
+    # py.test -s tests/redis_chan/test_json_idx.py
+    # py.test -s tests/redis_chan/test_flush_db.py
+    # py.test -s tests/redis_chan/test_lpush_lrange.py
+    # py.test -s tests/redis_chan/test_hash_idx.py
+    # py.test -s tests/redis_chan/test_string_mset_mget.py
+    # py.test -s tests/redis_chan/test_hset_hget.py
+    # py.test -s tests/redis_chan/test_set_get.py
+    # py.test -s tests/redis_chan/test_search_get_set.py
+}
+run_tests() {
+    # python scratch.py
+    # py.test -s tests/google_trends/test_one.py
+    # py.test -s tests/four_chan/test_get_catalog.py
+    # py.test -s tests/four_chan/test_board_enum.py
+    # py.test -s tests/mongo_db/test_chan_insert.py
+    py.test -s tests/email/test_one.py
+    # py.test -s tests/google_trends/test_one.py
+}
+test_rss() {
+    py.test -s tests/rss/test_rss.py
+}
+
+# test_rss
+# test_redis
+run_tests
+
+
+
+build_container() {
+    docker build -t data_tools:latest .  --network=host
+    docker run \
+            --name data_tools-container \
+            -p $PORT:$PORT \
+            --network=host \
+            -e MONGO_DB_NAME=develop_db \
+            -e AWS_REGION=ca-central-1 \
+            -e AWS_S3_BUCKET= \
+            -e AWS_S3_BUCKET= \
+            -e WHICH_LOGGER=uvicorn \
+            -e ENV_NAME=production \
+            -e PORT=$PORT \
+            data_tools:latest
+}
+# build_container
+

@@ -24,3 +24,5 @@ motor
 
 # chardet==4.0.0
 # opencv-python==4.5.5.64
+
+# redis==4.3.4

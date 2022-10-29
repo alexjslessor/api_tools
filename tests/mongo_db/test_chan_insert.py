@@ -33,25 +33,3 @@ class Test_MongoDB_Insert:
         print('upserted: ', result.bulk_api_result['upserted'])
 
 
-
-        # resp = await db['four_chan'].insert_many((i.dict() for i in data))
-        # idx = await mon_db.create_unique_idx(db['four_chan'], 'no')
-        # pprint(data)
-        # print(resp)
-        # print(idx)
-
-        # await mon_db.drop_collection(db, 'four_chan')
-
-
-
-    # def test_insert(self):
-        # loop = aio.get_or_create_eventloop()
-        # loop.run_until_complete(
-            # mon_db.insert_many_documents(db, CollectionNames.testing, data)
-            # mon_db.insert_docs_test(db, CollectionNames.testing, d)
-        # )
-
-        # asyncio.run(db[CollectionNames.testing].insert_docs_test(db, CollectionNames.testing, data))
-#     #     # asyncio.run(mon_db.insert_many_documents(db, CollectionNames.testing, data))
-#     #     loop.close()
-

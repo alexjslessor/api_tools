@@ -1,15 +1,14 @@
 
-from ..base_email import *
+from ...base import *
 from imaplib import IMAP4_SSL
 import email
 from email.header import decode_header
 import re
 from datetime import datetime
-from typing import List, Tuple, Any
 from contextlib import contextmanager
 import os
-from datetime import datetime
-from pprint import pprint
+from enum import Enum
+
 '''Instructions:
 1. create app password
 https://support.google.com/accounts/answer/185833
@@ -23,17 +22,19 @@ def IMAP4_conn_manager(
     try:
         _conn = IMAP4_SSL(host)
         _conn.login(account_email, app_password)
-        # _conn.select()# default is INBOX'
         yield _conn
     finally:
         _conn.close()
 
+class EmailEnum(str, Enum):
+    ALL = 'ALL'
+    INBOX = 'INBOX'
+    COPY = 'COPY'
+    STORE = 'STORE'
+    BODY = '(RFC822)'
+    UID = "(UID)"
 
 class EmailAcct:
-    
-    BODY: str = "(RFC822)"
-    UID: str = "(UID)"
-
     def __init__(
         self, 
         account_email: str = None,
@@ -45,7 +46,9 @@ class EmailAcct:
         self.mailbox = which_mailbox
 
         with IMAP4_conn_manager(
-            host=host, account_email=account_email, app_password=app_password) as conn:
+            host=host, 
+            account_email=account_email, 
+            app_password=app_password) as conn:
             conn.select()
             self.conn = conn
 
@@ -71,7 +74,12 @@ class EmailAcct:
         return self.conn.namespace()
 
     @property
-    def total_emails(self):
+    def total_emails(self) -> int:
+        """Total emails in all mail boxes.
+
+		Returns:
+			int: Count of total emails in all inboxes.
+		"""
         status, messages = self.conn.select('inbox')
         return int(messages[0])
 
@@ -107,21 +115,25 @@ class EmailAcct:
         # convert messages to a list of email IDs
         messages = messages[0].split(b' ')
         print(messages)
-        # for mail in messages:
-        #     _, msg = self.conn.fetch(mail, "(RFC822)")
-        #     # you can delete the for loop for performance if you have a long list of emails
-        #     # because it is only for printing the SUBJECT of target email to delete
-        #     for response in msg:
-        #         if isinstance(response, tuple):
-        #             msg = email.message_from_bytes(response[1])
-        #             # decode the email subject
-        #             subject = decode_header(msg["Subject"])[0][0]
-        #             if isinstance(subject, bytes):
-        #                 # if it's a bytes type, decode to str
-        #                 subject = subject.decode()
+        for mail in messages:
+            _, raw_msg = self.conn.fetch(mail, "(RFC822)")
+
+            # you can delete the for loop for performance if you have a long list of emails
+            # because it is only for printing the SUBJECT of target email to delete
+            for response in raw_msg:
+                if isinstance(response, tuple):
+                    msg = email.message_from_bytes(response[1])
+                    print(msg)
+                    # decode the email subject
+                    subject = decode_header(msg["Subject"])[0][0]
+                    if isinstance(subject, bytes):
+                        # if it's a bytes type, decode to str
+                        subject = subject.decode()
+                print(subject)
+
         #             print("Deleting", subject)
-        #     # mark the mail as deleted
-        #     self.conn.store(mail, "+FLAGS", "\\Deleted")
+            # mark the mail as deleted
+            # self.conn.store(mail, "+FLAGS", "\\Deleted")
         #     # permanently remove mails that are marked as deleted
         #     # from the selected mailbox (in this case, INBOX)
         #     self.conn.expunge()
@@ -133,7 +145,7 @@ class EmailAcct:
 
     def get_unique_sender_emails(
         self, 
-        neg_list: List[Any],
+        neg_list: Optional[List[Any]] = None,
         which_mailbox: str = 'INBOX'
         ):
         self.conn.list()
@@ -147,7 +159,6 @@ class EmailAcct:
         # fetch the email body (RFC822) for the given ID
         unique_senders = set()
         for i in id_list:
-            # print(i)
             result, data = self.conn.fetch(i, "(RFC822)")
             email_message = email.message_from_bytes(data[0][1])
             unique_senders.add(email_message['From'])
@@ -156,9 +167,9 @@ class EmailAcct:
 
     def _search_params(self, params):
         try:
-            typ, msgnums = self.conn.search(None, params)
+            typ, msg_ids = self.conn.search(None, params)
             if typ == 'OK':
-                return msgnums[0]
+                return msg_ids[0]
             raise Exception('Search Error')
         except Exception as err:
             return err
@@ -174,7 +185,7 @@ class EmailAcct:
     def search_emails(self, search_term: str) -> Any:
         self.conn.select()
         email_ids = self._search_params(search_term)
-        print(f'found {len(email_ids)} emails')
+        print(f'{email_ids}')
         # logger.info(f'found: {len(email_ids)} emails')
         # raw_email = self.get_raw_email(email_ids)
         # return raw_email
@@ -227,7 +238,31 @@ class EmailAcct:
         pattern_uid = re.compile(r'\d+ \(UID (?P<uid>\d+)\)')
         match = pattern_uid.match(data)
         return match.group('uid')
+    
+    def move_by_email_addr(self, email_address: str, to_mailbox: str = 'text_mailbox'):
+        self.conn.select(mailbox='INBOX', readonly=False)
+        status, data = self.conn.search(None, f'(FROM "{email_address}")')
+        if status == 'OK':
+            email_id_list  = data[0].split()
+            print(f'{len(email_id_list)} Emails Found for: {email_address}')
 
+            for email_id in email_id_list:
+                result, message_id = self.conn.fetch(email_id, "(UID)")
+                decoded_id = message_id[0]
+                # print(decoded_id)
+                if decoded_id:
+                    # print(decoded_id.decode('utf-8'))
+                    msg_uid = self.parse_uid(decoded_id.decode('utf-8'))
+                    result = self.conn.uid('COPY', msg_uid, to_mailbox)
+                    if result[0] == 'OK':
+                        print(f'Message Copy Success for ID: {msg_uid}')
+                        mov, data = self.conn.uid('STORE', msg_uid , '+FLAGS', '(\Deleted)')
+                        self.conn.expunge()
+                    else:
+                        print('Copy Failed')
+        else:
+            print('Search Failed')
+    
     def move_email(self, to_mailbox: str='text_mailbox'):
         self.conn.select(mailbox='inbox', readonly=False)
         resp, items = self.conn.search(None, 'All')
@@ -235,9 +270,9 @@ class EmailAcct:
         latest_email_id = email_ids[-1]
 
         # fetch the email body (RFC822) for the given ID
-        result, message = self.conn.fetch(latest_email_id, "(RFC822)")
-        email_message = email.message_from_bytes(message[0][1])
-        print(email_message['Subject'])
+        # result, message = self.conn.fetch(latest_email_id, "(RFC822)")
+        # email_message = email.message_from_bytes(message[0][1])
+        # print(email_message['Subject'])
 
         # fetch uid of the latest email
         resp, message_id = self.conn.fetch(latest_email_id, "(UID)")
@@ -248,6 +283,8 @@ class EmailAcct:
         if result[0] == 'OK':
             mov, data = self.conn.uid('STORE', msg_uid , '+FLAGS', '(\Deleted)')
             self.conn.expunge()
+        else:
+            print('Copy Failed')
 
 
 
@@ -255,7 +292,7 @@ class Gmail:
 
     def __init__(self):
         self.mail = IMAP4_SSL('imap.gmail.com')
-        self.mail.login('email@gmail.com', GMAIL_APP_PASSWORD)
+        self.mail.login('email@gmail.com', 'gmail password')
         self.save_dir = '/path/to/dir'
 
     def save_as_local(self, filename, payload):
@@ -335,22 +372,3 @@ class Gmail:
         # logger.info(f'email payload: {email_message.keys()}')
         bts = self.save_as_bytes(email_message)
         return bts
-
-
-
-# def gmail_1():
-#     mail = imaplib.IMAP4_SSL('imap.gmail.com')
-#     mail.login('email@gmail.com', GMAIL_APP_PASSWORD)
-#     mail.list()
-#     # Out: list of "folders" aka labels in gmail.
-#     mail.select("inbox") # connect to inbox.
-#     result, data = mail.search(None, "ALL")
-#     ids = data[0] # data is a list.
-#     id_list = ids.split() # ids is a space separated string
-#     latest_email_id = id_list[-1] # get the latest
-#     # fetch the email body (RFC822) for the given ID
-#     result, data = mail.fetch(latest_email_id, "(RFC822)") 
-#     raw_email = data[0][1] # here's the body, which is raw text of the whole email
-#     # including headers and alternate payloads
-#     return raw_email
-

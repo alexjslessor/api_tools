@@ -1,7 +1,6 @@
 import logging
 from os import environ
 
-
 def setup_logger(which_logger):
     logging.basicConfig(
         filename=environ.get('LOG_FILE_PATH'),# taken from loca .env file, not set in settings.py
