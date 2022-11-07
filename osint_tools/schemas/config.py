@@ -1,5 +1,4 @@
 from .base import *
-from datetime import datetime
 
 datetime_to_date = lambda t: t.isoformat(' ', 'hours').split(' ')[0]
 datetime_to_str = lambda t: t.isoformat()
@@ -15,8 +14,8 @@ class BaseConfig(BaseModel):
     class Config:
         allow_population_by_field_name = True
         arbitrary_types_allowed = True
-        # json_encoders = {
-            # datetime: datetime_to_unix_epoch,
-            # bson.decimal128.Decimal128: lambda x: str(x),
-            # datetime: datetime_to_str
-        # }
+        json_encoders = {
+            datetime: datetime_to_unix_epoch,
+            bson.decimal128.Decimal128: lambda x: str(x),
+            bson.ObjectId: str
+        }

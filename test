@@ -3,37 +3,31 @@ source ./env.sh
 test_env
 
 # uvicorn main:app --reload --port $PORT
+# strawberry server app
 
-test_redis() {
-    # python scratch.py
-    # python r_search.py
-    python blog_post.py
-    # py.test -s tests/redis_chan/test_json_idx.py
-    # py.test -s tests/redis_chan/test_flush_db.py
-    # py.test -s tests/redis_chan/test_lpush_lrange.py
-    # py.test -s tests/redis_chan/test_hash_idx.py
-    # py.test -s tests/redis_chan/test_string_mset_mget.py
-    # py.test -s tests/redis_chan/test_hset_hget.py
-    # py.test -s tests/redis_chan/test_set_get.py
-    # py.test -s tests/redis_chan/test_search_get_set.py
-}
-run_tests() {
+# run_tests() {
     # python scratch.py
     # py.test -s tests/google_trends/test_one.py
+    # py.test -s tests/email/test_one.py
+    # py.test -s tests/google_trends/test_one.py
+# }
+test_rss() {
+    poetry run py.test -s tests/rss/test_rss.py
+}
+test_chan() {
     # py.test -s tests/four_chan/test_get_catalog.py
     # py.test -s tests/four_chan/test_board_enum.py
-    # py.test -s tests/mongo_db/test_chan_insert.py
-    py.test -s tests/email/test_one.py
-    # py.test -s tests/google_trends/test_one.py
-}
-test_rss() {
-    py.test -s tests/rss/test_rss.py
-}
+    # poetry run py.test -s tests/chan/test_chan_insert.py
+    # poetry run py.test -s tests/chan/test_chan_insert.py::Test_Chan::test_get_insert_chan
 
-# test_rss
-# test_redis
-run_tests
+    poetry run py.test -s tests/chan/test_worker.py
+    # poetry run py.test -s tests/chan/test_worker.py::Test_4chan_Worker::test_replace_chan
+    # poetry run py.test -s tests/chan/test_read_chan_db.py::Test_Chan_DB::test_assert_board_is_string
+    # poetry run py.test -s tests/chan/test_read_chan_db.py::Test_Chan_DB::test_assert_board_not_list
 
+}
+test_rss
+# test_chan
 
 
 build_container() {
@@ -53,3 +47,16 @@ build_container() {
 }
 # build_container
 
+test_redis() {
+    # python scratch.py
+    # python r_search.py
+    python blog_post.py
+    # py.test -s tests/redis_chan/test_json_idx.py
+    # py.test -s tests/redis_chan/test_flush_db.py
+    # py.test -s tests/redis_chan/test_lpush_lrange.py
+    # py.test -s tests/redis_chan/test_hash_idx.py
+    # py.test -s tests/redis_chan/test_string_mset_mget.py
+    # py.test -s tests/redis_chan/test_hset_hget.py
+    # py.test -s tests/redis_chan/test_set_get.py
+    # py.test -s tests/redis_chan/test_search_get_set.py
+}

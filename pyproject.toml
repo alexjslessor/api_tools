@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "osint_tools"
-version = "0.1.4"
+version = "0.1.9"
 description = ""
 authors = ["Alexander Slessor <alexjslessor@gmail.com.com>"]
 readme = "README.md"
@@ -15,6 +15,7 @@ pydantic = "^1.10.1"
 motor = "^3.0.0"
 feedparser = "^6.0.8"
 python-jose = "^3.3.0"
+strawberry-graphql = {extras = ["debug-server", "fastapi"], version = "^0.139.0"}
 
 [tool.poetry.group.dev.dependencies]
 httpx = "^0.23.0"

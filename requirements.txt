@@ -6,6 +6,7 @@ requests>=2.11
 # python-multipart==0.0.5
 # pydantic[email,dotenv]==1.9.0
 pydantic[email,dotenv]
+strawberry-graphql[debug-server,fastapi]
 # uvicorn==0.17.5
 # uvicorn[standard]
 # gunicorn==20.1.0

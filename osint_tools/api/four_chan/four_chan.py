@@ -4,21 +4,22 @@ import httpx
 import requests
 import urllib.parse
 from time import sleep
-
+# from typing import Union
 
 def get_catalog(board: Board, as_dict: bool = False) -> List[CatalogThread]:
     url = f'https://a.4cdn.org/{Board[board]}/catalog.json'
     data = requests.get(url).json()
-    all_posts = []
+
+    all_posts: List[CatalogThread] = []
     for page in data:
         for thread in page['threads']:
             '''attach board to thread'''
+            assert not isinstance(board, List), 'board should not be list'
             thread['board'] = board
-            if as_dict:
-                all_posts.append(CatalogThread(**thread).dict())
-            else:
-                all_posts.append(CatalogThread(**thread))
-
+            # if as_dict:
+            # all_posts.append(CatalogThread(**thread).dict())
+            # else:
+            all_posts.append(CatalogThread(**thread))
     return all_posts
 
 
@@ -45,17 +46,12 @@ def catalog_image_generator(board: Board):
 
 def iter_img_lst():
     counter = 0
-    for img in catalog_image_generator():
+    for img in catalog_image_generator(Board.pol):
         sleep(1.01)
         file_name = img.split('/')[-1]
         filename, headers = urllib.request.urlretrieve(img, f'./chan_images/{file_name}')
         counter += 1
         print(f'{counter}: {filename} {headers}')
-
-
-
-# if __name__ == "__main__":
-    # iter_img_lst()
 
 
 

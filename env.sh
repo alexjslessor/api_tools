@@ -8,14 +8,8 @@ set_env() {
   # echo "<---ENV: $env_file_path --->"
 }
 
-dev_env() {
-  set_env .base
-  set_env .dev
-  # echo "${MONGO_DB_NAME}"
-}
 test_env() {
   set_env .base
-  set_env .test
-  # echo "${MONGO_DB_NAME}"
+  echo "${MONGO_DB_NAME}"
 }
 

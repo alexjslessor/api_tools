@@ -18,4 +18,6 @@ cli.py_
 not_implemented
 dist
 
+.mypy_cache
 
+app.py
