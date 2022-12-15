@@ -1,6 +1,7 @@
 *.svg
 __pycache__
 
+chan_images
 .vscode
 .env
 .pytest_cache

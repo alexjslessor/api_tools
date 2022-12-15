@@ -26,8 +26,12 @@ test_chan() {
     # poetry run py.test -s tests/chan/test_read_chan_db.py::Test_Chan_DB::test_assert_board_not_list
 
 }
-test_rss
+test_chan_images() {
+    poetry run py.test -s tests/chan/test_image.py
+}
+# test_rss
 # test_chan
+test_chan_images
 
 
 build_container() {

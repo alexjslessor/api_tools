@@ -20,6 +20,7 @@ class Board(str, Enum):
     s4s = 's4s'
     cm = 'cm'
     hm = 'hm'
+    hr = 'hr'
     lgbt = 'lgbt'
     sci = 'sci'
     wsg = 'wsg'
@@ -47,6 +48,19 @@ class FourChanBase(BaseModel):
     #     return [cls(**i) async for i in q]
     #     # return [CatalogBase(**i) async for i in q]
 
+
+# class ImageField(BaseModel):
+    # Images: this is required to download post images
+    # int thorws 32bit gql error
+    # NOTE: changed to string
+    # tim: Optional[str] = Field(None, description="always if post has attachment | Unix timestamp + microtime that an image was uploaded | integer")
+    # Images: image extension
+    # ext: Optional[str] = Field(None, description="always if post has attachment | Filetype | jpg, png, gif, pdf, swf, webm")
+
+# class CatalogImages(ImageField):
+    # board: Board
+    # last_replies: List[ImageField] = Field([], description='Reply Images.')
+
 class CatalogBase(FourChanBase):
     no: Optional[int] = Field(None, description="always | The numeric post ID | any positive integer")
     resto: Optional[int] = Field(None, description="always | For replies: this is the ID of the thread being replied to. For OP: this value is zero |`0` or `Any positive integer")
@@ -67,9 +81,14 @@ class CatalogBase(FourChanBase):
 
     com: Optional[str] = Field(None, description="if comment was included | Comment (HTML escaped) | any HTML escaped string")
 
-    tim: Optional[int] = Field(None, description="always if post has attachment | Unix timestamp + microtime that an image was uploaded | integer")
-    filename: Optional[str] = Field(None, description="always if post has attachment | Filename as it appeared on the poster's device | any string")
+    # # Images: this is required to download post images
+    # # int thorws 32bit gql error
+    # # NOTE: changed to string
+    tim: Optional[str] = Field(None, description="always if post has attachment | Unix timestamp + microtime that an image was uploaded | integer")
+    # # Images: image extension
     ext: Optional[str] = Field(None, description="always if post has attachment | Filetype | jpg, png, gif, pdf, swf, webm")
+
+    filename: Optional[str] = Field(None, description="always if post has attachment | Filename as it appeared on the poster's device | any string")
     fsize: Optional[int] = Field(None, description="always if post has attachment | Size of uploaded file in bytes | any integer")
     md5: Optional[str] = Field(None, description="always if post has attachment | 24 character, packed base64 MD5 hash of file")
     w: Optional[int] = Field(None, description="always if post has attachment | Image width dimension | `any integer")

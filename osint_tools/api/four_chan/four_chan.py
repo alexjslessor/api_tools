@@ -3,8 +3,12 @@ import json
 import httpx
 import requests
 import urllib.parse
+import urllib.request
+
+import random
 from time import sleep
 # from typing import Union
+import os.path
 
 def get_catalog(board: Board, as_dict: bool = False) -> List[CatalogThread]:
     url = f'https://a.4cdn.org/{Board[board]}/catalog.json'
@@ -16,16 +20,14 @@ def get_catalog(board: Board, as_dict: bool = False) -> List[CatalogThread]:
             '''attach board to thread'''
             assert not isinstance(board, List), 'board should not be list'
             thread['board'] = board
-            # if as_dict:
-            # all_posts.append(CatalogThread(**thread).dict())
-            # else:
             all_posts.append(CatalogThread(**thread))
     return all_posts
 
 
 
 def catalog_image_generator(board: Board):
-    url = f'https://a.4cdn.org/{board}/catalog.json'
+    # https://github.com/4chan/4chan-API/blob/master/pages/User_images_and_static_content.md
+    url = f'https://a.4cdn.org/{Board[board]}/catalog.json'
     r = requests.get(url).json()
     lst = []
     for idx, page in enumerate(r):
@@ -44,17 +46,36 @@ def catalog_image_generator(board: Board):
     for i in lst:
         yield i
 
-def iter_img_lst():
+def iter_img_lst(board, save_dir: str):
+    '''
+    https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Modified-Since
+    If-Modified-Since: <day-name>, <day> <month> <year> <hour>:<minute>:<second> GMT
+    e.g.:  Thu, 15 Dec 2022 03:51:47 GMT
+    '''
+    path = f'{save_dir}/'
     counter = 0
-    for img in catalog_image_generator(Board.pol):
-        sleep(1.01)
+    for img in catalog_image_generator(board):
         file_name = img.split('/')[-1]
-        filename, headers = urllib.request.urlretrieve(img, f'./chan_images/{file_name}')
-        counter += 1
-        print(f'{counter}: {filename} {headers}')
+        if not os.path.isfile(path + file_name):# if file does not exist; download image.
+            sleep(5)
+            try:
+                filename, headers = urllib.request.urlretrieve(img, path + file_name)
+            except Exception as e:
+                print(e)
+            else:
+                counter += 1
+                print(f'{counter}: {filename} {headers}')
+        else:
+            print(f'file exists: {file_name}')
+            continue
 
 
 
+# req = urllib.request.Request('http://www.example.com/')
+# req.add_header('Referer', 'http://www.python.org/')
+# # Customize the default User-Agent header value:
+# req.add_header('User-Agent', 'urllib-example/0.1 (Contact: . . .)')
+# r = urllib.request.urlopen(req)
 
 
 
