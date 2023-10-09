@@ -1,66 +1,31 @@
 #!/bin/bash
-source ./env.sh
-test_env
 
-# uvicorn main:app --reload --port $PORT
-# strawberry server app
+source ./scripts/env.sh && dev_env_lib
 
-# run_tests() {
-    # python scratch.py
-    # py.test -s tests/google_trends/test_one.py
-    # py.test -s tests/email/test_one.py
-    # py.test -s tests/google_trends/test_one.py
-# }
 test_rss() {
     poetry run py.test -s tests/rss/test_rss.py
 }
 test_chan() {
-    # py.test -s tests/four_chan/test_get_catalog.py
-    # py.test -s tests/four_chan/test_board_enum.py
     # poetry run py.test -s tests/chan/test_chan_insert.py
     # poetry run py.test -s tests/chan/test_chan_insert.py::Test_Chan::test_get_insert_chan
-
-    poetry run py.test -s tests/chan/test_worker.py
-    # poetry run py.test -s tests/chan/test_worker.py::Test_4chan_Worker::test_replace_chan
+    # poetry run py.test -s tests/chan/test_worker.py
     # poetry run py.test -s tests/chan/test_read_chan_db.py::Test_Chan_DB::test_assert_board_is_string
     # poetry run py.test -s tests/chan/test_read_chan_db.py::Test_Chan_DB::test_assert_board_not_list
-
+    poetry run py.test -s tests/chan/test_worker.py::TestWorker
+    # poetry run py.test -s tests/chan/test_worker.py::Test_4chan_Worker::test_replace_chan
 }
 test_chan_images() {
     poetry run py.test -s tests/chan/test_image.py
 }
+
+# test_llm
 # test_rss
+
 # test_chan
-test_chan_images
+# test_chan_images
 
+# test_ocr_translate
+# pytest -s
+# uvicorn main:app --reload --port $PORT
+# strawberry server app
 
-build_container() {
-    docker build -t data_tools:latest .  --network=host
-    docker run \
-            --name data_tools-container \
-            -p $PORT:$PORT \
-            --network=host \
-            -e MONGO_DB_NAME=develop_db \
-            -e AWS_REGION=ca-central-1 \
-            -e AWS_S3_BUCKET= \
-            -e AWS_S3_BUCKET= \
-            -e WHICH_LOGGER=uvicorn \
-            -e ENV_NAME=production \
-            -e PORT=$PORT \
-            data_tools:latest
-}
-# build_container
-
-test_redis() {
-    # python scratch.py
-    # python r_search.py
-    python blog_post.py
-    # py.test -s tests/redis_chan/test_json_idx.py
-    # py.test -s tests/redis_chan/test_flush_db.py
-    # py.test -s tests/redis_chan/test_lpush_lrange.py
-    # py.test -s tests/redis_chan/test_hash_idx.py
-    # py.test -s tests/redis_chan/test_string_mset_mget.py
-    # py.test -s tests/redis_chan/test_hset_hget.py
-    # py.test -s tests/redis_chan/test_set_get.py
-    # py.test -s tests/redis_chan/test_search_get_set.py
-}
