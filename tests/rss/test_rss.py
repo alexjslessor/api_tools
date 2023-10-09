@@ -1,7 +1,7 @@
 from ..conftest import *
 
 rss = RSSFeed()
-feed_test = 'http://feedparser.org/docs/examples/rss20.xml'
+# feed_test = 'http://feedparser.org/docs/examples/rss20.xml'
 
 # @pytest.mark.asyncio
 class Test_RSS:
@@ -11,4 +11,5 @@ class Test_RSS:
             print(url)
             all_feeds += rss.get_feed(url)
         pprint(all_feeds)
+        assert all_feeds, 'no feeds'
 

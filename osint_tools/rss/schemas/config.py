@@ -1,7 +1,9 @@
-from .base import *
+from pydantic import BaseModel
+import bson
+import datetime
 
-datetime_to_date = lambda t: t.isoformat(' ', 'hours').split(' ')[0]
-datetime_to_str = lambda t: t.isoformat()
+# datetime_to_date = lambda t: t.isoformat(' ', 'hours').split(' ')[0]
+# datetime_to_str = lambda t: t.isoformat()
 datetime_to_unix_epoch = lambda x: x.timestamp()
 
 class BaseConfig(BaseModel):
@@ -15,7 +17,7 @@ class BaseConfig(BaseModel):
         allow_population_by_field_name = True
         arbitrary_types_allowed = True
         json_encoders = {
-            datetime: datetime_to_unix_epoch,
+            datetime.datetime: datetime_to_unix_epoch,
             bson.decimal128.Decimal128: lambda x: str(x),
             bson.ObjectId: str
         }

@@ -1,8 +1,8 @@
 import feedparser
-from ..base import *
+from ..schemas.schema import RSS_Schema
 
 class RSSFeed(object):
-    def get_feed(self, url: str) -> List[RSS_Schema]:
+    def get_feed(self, url: str) -> list[RSS_Schema]:
         d = feedparser.parse(url)
         rss = []
         for k in d['entries']:

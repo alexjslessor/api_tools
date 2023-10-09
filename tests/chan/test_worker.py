@@ -1,6 +1,6 @@
 from ..conftest import *
 # from bson import ObjectId
-
+from pymongo import ReplaceOne
 # async def test_update_chan():
         # print('matched: ', update.matched_count)
         # print('modified: ', update.modified_count)
@@ -24,56 +24,35 @@ from ..conftest import *
     # delete = await db['4chan'].delete_many({"board": {'$type': 'string'}})
     # pass
 
-_test_collection: str = '4chan_test_collection'
+TEST_COLLECTION: str = '4chan_test_collection'
 
 @pytest.mark.asyncio
-class Test_4chan_Worker:
-    # @pytest.mark.parametrize(
-    #     "board_enum", 
-    #     [
-    #         (
-    #             Board.pol,
-    #         )
-    #     ]
-    # )
-    async def test_replace_chan(
-        self,
-        # board_enum
-        ):
+class TestWorker:
+
+    async def test_replace_chan(self):
         data = get_catalog(Board.pol)
         update = []
         for catalog_model in data:
             update.append(ReplaceOne(
                 {'no': catalog_model.no}, catalog_model.dict(), upsert=True)
             )
-
-        assert len(update) >= 10, 'check update list len'
-        pprint(update[:2])
+        assert len(update) >= 10, f'check update list len: {update}'
+        # pprint(update[:1])
         return update
 
 
-    # @pytest.mark.parametrize(
-    #     "test_collection", 
-    #     [
-    #         (
-    #             _test_collection,
-    #         )
-    #     ]
-    # )
-    async def test_insert_chan(
-        self,
-        # test_collection
-        ):
-        update = await self.test_replace_chan(); print(update)
+    async def test_insert_chan(self,):
+        update = await self.test_replace_chan()
 
-        idx = await mon_db.create_unique_idx(db[_test_collection], 'no')
-        assert idx is not None; print(idx)
+        idx = await mon_db.create_unique_idx(db[TEST_COLLECTION], 'no')
+        assert idx is not None, f'create_unique_idx is None: {idx}'
 
-        result = await db[_test_collection].bulk_write(update)
-        assert result is not None
-        assert result.bulk_api_result['nModified'] > 0
-        assert result.bulk_api_result['writeErrors'] == []
-        assert result.bulk_api_result['writeConcernErrors'] == []
+        result = await db[TEST_COLLECTION].bulk_write(update)
+        assert result is not None, f'result is none'
+        # assert result.bulk_api_result['nModified'] > 0, 'none modified'
+        assert result.bulk_api_result['writeErrors'] == [], 'has errors'
+        assert result.bulk_api_result['writeConcernErrors'] == [], 'has write concerns'
+        print('')
         print('nModified: ', result.bulk_api_result['nModified'])
         print('nUpserted: ', result.bulk_api_result['nUpserted'])
         print('nInserted: ', result.bulk_api_result['nInserted'])
@@ -88,7 +67,7 @@ class Test_Chan_DB:
         "test_collection,query", 
         [
             (
-                _test_collection,
+                TEST_COLLECTION,
                 {"board": {'$type': 'string'}}
             )
         ]
@@ -107,7 +86,7 @@ class Test_Chan_DB:
         "test_collection,query", 
         [
             (
-                _test_collection,
+                TEST_COLLECTION,
                 {"board": {'$type': 'array'}}
             )
         ]

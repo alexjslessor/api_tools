@@ -1,5 +1,7 @@
-from .base import *
 import strawberry
+from enum import Enum, auto
+from pydantic import BaseModel, Field
+from typing import Optional
 
 @strawberry.enum
 class Board(str, Enum):
@@ -61,6 +63,17 @@ class FourChanBase(BaseModel):
     # board: Board
     # last_replies: List[ImageField] = Field([], description='Reply Images.')
 
+@strawberry.enum
+class CapCode(str, Enum):
+    # Not set = None
+    mod = auto()
+    admin = auto()
+    admin_highlight = auto() 
+    manager = auto()
+    developer = auto()
+    founder = auto()
+
+
 class CatalogBase(FourChanBase):
     no: Optional[int] = Field(None, description="always | The numeric post ID | any positive integer")
     resto: Optional[int] = Field(None, description="always | For replies: this is the ID of the thread being replied to. For OP: this value is zero |`0` or `Any positive integer")
@@ -113,7 +126,7 @@ class CatalogBase(FourChanBase):
 
 class CatalogThread(CatalogBase):
     board: Board
-    last_replies: List[CatalogBase] = Field([], description='Thread replies.')# catalog OP only | JSON representation of the most recent replies to a thread | array of JSON post objects")
+    last_replies: list[CatalogBase] = Field([], description='Thread replies.')# catalog OP only | JSON representation of the most recent replies to a thread | array of JSON post objects")
 
 @strawberry.experimental.pydantic.type(
     model=CatalogBase, 

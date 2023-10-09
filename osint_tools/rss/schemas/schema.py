@@ -1,8 +1,9 @@
-from ..config import *
+from .config import BaseConfig
 from enum import Enum, auto
+from typing import Optional
 import re
 from uuid import uuid4
-from pydantic import root_validator
+from pydantic import root_validator, Field
 import strawberry
 
 '''
@@ -44,14 +45,14 @@ summary:  <span class="field field--name-title field--type-string field--label-h
 
 class EnumBase(Enum):
     @classmethod
-    def list_name_or_value(cls, name_or_value: str) -> List[str]:
-        """List names or values of derived enum class
+    def list_name_or_value(cls, name_or_value: str) -> list[str]:
+        """list names or values of derived enum class
 
         Args:
             name_or_value (str): name  | value
 
         Returns:
-            (List[str]): list of derived enum classes names or values
+            (list[str]): list of derived enum classes names or values
         """
         return [getattr(i, name_or_value) for i in cls.__members__.values()]
 
@@ -120,6 +121,9 @@ class EnumRSS(str, EnumBase):
 
     dm_fbi = 'https://www.dailymail.co.uk/news/fbi/index.rss'
     dm_giz_lane = 'https://www.dailymail.co.uk/news/ghislainemaxwell/index.rss'
+    haaretz = 'https://www.haaretz.com/srv/haaretz-latest-headlines'
+
+
 
 @strawberry.enum
 class Topic(str, EnumAutoBase):
@@ -159,7 +163,15 @@ class Links(BaseConfig):
 
     class Config:
         schema_extra = {
-            'links': [{'rel': 'alternate', 'type': 'text/html', 'href': 'https://www.zerohedge.com/crypto/coinbase-ceo-ordinary-russians-are-using-crypto-lifeline'}]
+            'example': {
+                'links': [
+                    {
+                        'rel': 'alternate', 
+                        'type': 'text/html', 
+                        'href': 'https://www.zerohedge.com/crypto/coinbase-ceo-ordinary-russians-are-using-crypto-lifeline'
+                    }
+                ]   
+            }
         }
 
 class MediaCredit(BaseConfig):
@@ -186,17 +198,17 @@ class SummaryDetail(TitleDetail):
 class RSS_Schema(BaseConfig):
     id: str = Field(default_factory=uuid4, alias="_id")# type: ignore
     unique_id: Optional[str] = Field('')
-    authors: Optional[List[Authors]] = None
+    authors: Optional[list[Authors]] = None
     author: Optional[str] = None
     author_detail: Optional[AuthorDetail] = None
     credit: Optional[str] = None
-    media_credit: Optional[List[MediaCredit]] = None
+    media_credit: Optional[list[MediaCredit]] = None
     title: Optional[str] = None
     link: Optional[str] = None
-    links: Optional[List[Links]] = None
+    links: Optional[list[Links]] = None
     published: Optional[str] = None
-    tags: Optional[List[Tags]] = None
-    media_content: Optional[List[MediaContent]] = None
+    tags: Optional[list[Tags]] = None
+    media_content: Optional[list[MediaContent]] = None
     summary_detail: Optional[SummaryDetail] = None
     flag: PropCategory = PropCategory.UN_CATEGORIZED
     topic: Topic = Topic.UN_ASSIGNED

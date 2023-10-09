@@ -1,2 +1,2 @@
-from .mongo_db.manager import *
+from .mongo_db import *
 

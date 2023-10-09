@@ -1,19 +1,26 @@
 from ..conftest import *
+from time import sleep
 
-# @pytest.mark.asyncio
 class Test_Chan_Images:
-    # @pytest.mark.parametrize(
-    #     "test_collection,query", 
-    #     [
-    #         (
-    #             _test_collection,
-    #             {"board": {'$type': 'string'}}
-    #         )
-    #     ]
-    # )
-    def test_assert_board_is_string(self):
-        # iter_img_lst(Board.wg, './chan_images')
-        # iter_img_lst(Board.pol, './chan_images')
-        iter_img_lst(Board.hr, './chan_images')
+
+    folder_path = './chan_images'
+
+    @pytest.mark.parametrize(
+        "board", 
+        [
+            (
+                Board.pol 
+            ),
+            (
+                Board.wg 
+            ),
+            (
+                Board.hr 
+            )
+        ]
+    )
+    def test_assert_board_is_string(self, board):
+        sleep(3)
+        iter_img_lst(board, self.folder_path)
 
 

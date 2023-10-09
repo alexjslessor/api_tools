@@ -1,5 +1,4 @@
-from ..base_db import *
-from typing import List, Dict, Any, Callable
+from typing import Any, Callable
 from pydantic import BaseModel, AnyUrl
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from pymongo import ( 
@@ -39,11 +38,11 @@ class MongoCrud(object):
         return self.db.name
 
     @property
-    async def get_build_info(self) -> Dict:
+    async def get_build_info(self) -> dict:
         return await self.db.command("buildinfo")
 
     @property
-    async def get_collection_names(self) -> List[str]:
+    async def get_collection_names(self) -> list[str]:
         non_system = {"name": {"$regex": r"^(?!system\.)"}}
         return await self.db.list_collection_names(filter=non_system)
 
@@ -59,28 +58,6 @@ class MongoCrud(object):
         """
         res = await db.create_index(field, unique=True)
         return res
-
-    async def create_multi_index(self, db) -> Any:
-        pass
-        # from pymongo import IndexModel, ASCENDING, DESCENDING
-        # index1 = IndexModel(
-        #     [
-        #         ("hello", DESCENDING), 
-        #         ("world", ASCENDING)
-        #     ], 
-        #     name="hello_world"
-        # )
-        # index2 = IndexModel([("goodbye", DESCENDING)])
-        # resp = await db.create_indexes([index1, index2])
-        # return ''
-
-    # async def create_collection(self, db, name):
-        # return await db.create_collection(name)
-
-    # async def count_docs(self, db) -> int:
-        # count = await db.count_documents({})
-        # return count
-
 
     async def drop_collection(self, db, collection_name) -> Any:
         dropped = await db.drop_collection(collection_name)
@@ -106,7 +83,7 @@ class MongoCrud(object):
             cur = await db.distinct(field)
             return cur
         except Exception as err:
-            logger.info(f'{err}')
+            # logger.info(f'{err}')
             raise Exception(f'{err}')
 
     async def delete_all(
@@ -123,7 +100,7 @@ class MongoCrud(object):
         self, 
         db, 
         collection_name, 
-        results: List, 
+        results: list, 
         is_testing: bool = False
         ) -> Any:
         '''
@@ -132,8 +109,8 @@ class MongoCrud(object):
         if is_testing:
             try:
                 await db.drop_collection(collection_name)
-            except Exception as err:
-                logger.info(f'insert many: {err}')
+            except Exception as e:
+                raise
 
         await db[collection_name].insert_many((i for i in results))
         # count = await self.count_docs(db[collection_name])
@@ -144,11 +121,10 @@ class MongoCrud(object):
         self,
         db,
         collection_name,
-        results: List,
+        results: list,
         ) -> Any:
         result = await db[collection_name].insert_many(({'x': i} for i in range(2)))
         r = result.inserted_ids
-        print(r)
         return r
 
     async def find_all(
@@ -159,7 +135,7 @@ class MongoCrud(object):
         _projection=None, 
         as_dict=False,
         skip=0, 
-        limit=0) -> List:
+        limit=0) -> list:
         query = db.find(_filter, _projection, skip=0, limit=0)
         if model:
             if as_dict:
@@ -187,11 +163,10 @@ class MongoCrud(object):
             ]
             result = await db_to.bulk_write(requests)
             res_str = f'''New:\n-{result.upserted_ids}\nModified:\n-{result.modified_count}'''
-            logger.info(res_str)
+            # logger.info(res_str)
             return res_str
-        except Exception as err:
-            logger.warn(f'Update Failed: {err}')
-            return err
+        except Exception as e:
+            raise
 
 
     async def bulk_insert_one(
@@ -211,22 +186,18 @@ class MongoCrud(object):
             ]
             result = await db_to.bulk_write(requests)
             res_str = f'''New:\n-{result.upserted_ids}\nModified:\n-{result.modified_count}'''
-            logger.info(res_str)
-
             return res_str
-        except Exception as err:
-            logger.warn(f'Update Failed: {err}')
-            return err
+        except Exception as e:
+            raise
 
 
-    async def aggregation(self, db, pipe_line: List, model: Callable = None) -> List:
+    async def aggregation(self, db, pipe_line: list, model: Callable = None) -> list:
         try:
             cur = db.aggregate(pipe_line, allowDiskUse=True)
             if model:
                 return [model(**i).dict() async for i in cur]
             return [i async for i in cur]
         except Exception as err:
-            logger.info(f'{err}')
             raise Exception(f'{err}')
 
 
@@ -262,34 +233,5 @@ class MongoCrud(object):
             return await db.delete_one(obj)
         except Exception as e:
             return e
-
-    # async def read(
-    #     self, 
-    #     db,
-    #     search_by = None,
-    #     filter_by = None,
-    #     # model = None, 
-    #     ):
-    #     """
-    #     Read Document with .find()
-
-    #     https://pymongo.readthedocs.io/en/stable/api/pymongo/collection.html#pymongo.collection.Collection.find
-
-    #     Args:
-    #         db (_type_): _description_
-    #         search_by (_type_, optional): _description_. Defaults to None.
-    #         filter_by (_type_, optional): _description_. Defaults to None.
-
-    #     Returns:
-    #         _type_: _description_
-    #     """
-    #     try:
-    #         doc = db.find(search_by, filter_by)
-    #         # if model:
-    #             # return [model(**raw) async for raw in doc]
-    #         return [raw async for raw in doc]
-    #     except Exception as e:
-    #         return e
-
 
 
