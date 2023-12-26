@@ -75,6 +75,11 @@ poetry remove --group dev httpx
 - Checks poetry.lock file for exact versions of all dependencies to install.
     - Install's those versions into the virtual environment that Poetry is managing for your project.
 
+## poetry install dev
+```sh
+poetry install --with dev
+```
+
 ## poetry install --all-extras --dry-run
 - Install all dependencies.
 - Install dev dependancies listed in pyproject.toml file. 

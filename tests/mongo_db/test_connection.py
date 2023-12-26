@@ -1,11 +1,8 @@
 from ..conftest import *
-from os import environ
 from pprint import pprint
-
 
 @pytest.mark.asyncio
 class Test_MongoDB:
-
     async def test_get_db_name(self):
         c = mon_db.get_db_name
         pprint(c)

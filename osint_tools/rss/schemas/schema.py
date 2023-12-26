@@ -3,8 +3,10 @@ from enum import Enum, auto
 from typing import Optional
 import re
 from uuid import uuid4
-from pydantic import root_validator, Field
-import strawberry
+from pydantic import root_validator, Field, BaseModel
+import feedparser
+from pymongo import ReplaceOne
+import pymongo
 
 '''
 published:  Fri, 04 Mar 2022 23:20:00 +0000
@@ -67,7 +69,6 @@ class EnumAutoBase(EnumBase):
     def _generate_next_value_(name, start, count, last_values):
         return name
 
-@strawberry.enum
 class EnumRSS(str, EnumBase):
     cbc_world = 'cbc.ca/cmlink/rss-world'
     cbc_health = 'https://rss.cbc.ca/lineup/health.xml'
@@ -122,14 +123,27 @@ class EnumRSS(str, EnumBase):
     dm_fbi = 'https://www.dailymail.co.uk/news/fbi/index.rss'
     dm_giz_lane = 'https://www.dailymail.co.uk/news/ghislainemaxwell/index.rss'
     haaretz = 'https://www.haaretz.com/srv/haaretz-latest-headlines'
+    # FOREX
+    forex_live = 'https://www.forexlive.com/rss'
+    # BOC: https://www.bankofcanada.ca/rss-feeds/
+    boc_cryptoassets = 'https://www.bankofcanada.ca/topic/cryptoassets/feed/'
+    boc_cryptocurrencies = 'https://www.bankofcanada.ca/topic/cryptocurrencies/feed/'
+    boc_digitalization = 'https://www.bankofcanada.ca/topic/digitalization/feed/'
+    boc_digital_currencies = 'https://www.bankofcanada.ca/topic/digital-currencies/feed/'
+    boc_climate_change = 'https://www.bankofcanada.ca/topic/climate-change/feed/'
+    boc_research = 'https://www.bankofcanada.ca/topic/central-bank-research/feed/'
+    boc_fiscalpolicy = 'https://www.bankofcanada.ca/topic/fiscal-policy/feed/'
+    boc_inflation_prices = 'https://www.bankofcanada.ca/topic/inflation-and-prices/feed/'
+    boc_inflation_targets = 'https://www.bankofcanada.ca/topic/inflation-targets/feed/'
+    boc_inflation_cost_benefits = 'https://www.bankofcanada.ca/topic/inflation-costs-and-benefits/feed/'
+    boc_interest_rates = 'https://www.bankofcanada.ca/topic/interest-rates/feed/'
 
 
 
-@strawberry.enum
 class Topic(str, EnumAutoBase):
     UN_ASSIGNED = auto()
 
-@strawberry.enum
+# @strawberry.enum
 class PropCategory(str, EnumAutoBase):
     COVERUP = auto()
     PROP_AGANDA = auto()
@@ -177,7 +191,6 @@ class Links(BaseConfig):
 class MediaCredit(BaseConfig):
     content: Optional[str] = None
 
-
 class MediaContent(BaseConfig):
     medium: Optional[str] = None
     url: Optional[str] = None
@@ -195,9 +208,16 @@ class SummaryDetail(TitleDetail):
     '''SummaryDetail has same fields as TitleDetail'''
     pass
 
-class RSS_Schema(BaseConfig):
-    id: str = Field(default_factory=uuid4, alias="_id")# type: ignore
-    unique_id: Optional[str] = Field('')
+class RssSchema(BaseConfig):
+    id: str = Field(
+        default_factory=lambda: str(uuid4()), 
+        alias="_id")# type: ignore
+    unique_id: Optional[str] = Field(
+        default_factory=lambda: '',
+        description='Compound idx; created from other fileds')
+    article_id: str = Field(
+        # default_factory=lambda: '',
+        description='id of article, conflicting with _id')
     authors: Optional[list[Authors]] = None
     author: Optional[str] = None
     author_detail: Optional[AuthorDetail] = None
@@ -221,59 +241,119 @@ class RSS_Schema(BaseConfig):
         val['unique_id'] = str(val['rss_url']) + '-' + str(val['link'])
         return val
 
-@strawberry.experimental.pydantic.type(
-    model=Authors, 
-    all_fields=True)
-class AuthorsGQL:
-    pass
+class RssSchemaList(BaseModel):
+    rss_list: list[RssSchema] | list = []
 
-@strawberry.experimental.pydantic.type(
-    model=AuthorDetail, 
-    all_fields=True)
-class AuthorDetailGQL:
-    pass
+    @staticmethod
+    def _get_feed_static(url: str) -> list[RssSchema]:
+        d = feedparser.parse(url)
+        rss = []
+        for k in d['entries']:
+            post = {}
+            # rename id, as it conflicts with _id
+            post['article_id'] = k.pop('id', '')
+            for k, v in k.items():
+                post[k] = v
+                post['rss_url'] = url
+            rss.append(RssSchema(**post))
+        return rss
 
-@strawberry.experimental.pydantic.type(
-    model=TitleDetail, 
-    all_fields=True)
-class TitleDetailGQL:
-    pass
+    @classmethod
+    def get_url(cls, url: str) -> list[RssSchema]:
+        rss_list = cls._get_feed_static(url)
+        return cls(rss_list=rss_list)
 
-@strawberry.experimental.pydantic.type(
-    model=Tags, 
-    all_fields=True)
-class TagsGQL:
-    pass
+    @classmethod
+    def get_urls(cls, urls: list[str], limit: int = -1):
+        rss_list = []
+        counter = 0
+        for url in urls[:limit]:
+            rss_list += cls._get_feed_static(url)
+            counter += 1
+            print(f'{counter} - {url}')
+        return cls(rss_list=rss_list)
 
-@strawberry.experimental.pydantic.type(
-    model=MediaCredit, 
-    all_fields=True)
-class MediaCreditGQL:
-    pass
+    async def to_db(
+        self, 
+        db,
+        collection: str, 
+        filter_field: str,
+        exclude: tuple[str] = {'id'}
+    ):
+        update = []
+        for article in self.rss_list:
+            update.append(
+                ReplaceOne(
+                    {
+                        filter_field: getattr(article, filter_field)
+                    }, 
+                    article.dict(exclude=exclude), 
+                    upsert=True
+                )
+            )
+        try:
+            result = await db[collection].bulk_write(update)
+            print(f"rss nModified: {result.bulk_api_result['nModified']}")
+            print(f"rss nUpserted: {result.bulk_api_result['nUpserted']}")
+            print(f"rss nInserted: {result.bulk_api_result['nInserted']}")
+            print(f"rss nMatched: {result.bulk_api_result['nMatched']}")
+            return True
+        except pymongo.errors.BulkWriteError as e:
+            raise
 
-@strawberry.experimental.pydantic.type(
-    model=MediaContent, 
-    all_fields=True)
-class MediaContentGQL:
-    pass
+# @strawberry.experimental.pydantic.type(
+#     model=Authors, 
+#     all_fields=True)
+# class AuthorsGQL:
+#     pass
+
+# @strawberry.experimental.pydantic.type(
+#     model=AuthorDetail, 
+#     all_fields=True)
+# class AuthorDetailGQL:
+#     pass
+
+# @strawberry.experimental.pydantic.type(
+#     model=TitleDetail, 
+#     all_fields=True)
+# class TitleDetailGQL:
+#     pass
+
+# @strawberry.experimental.pydantic.type(
+#     model=Tags, 
+#     all_fields=True)
+# class TagsGQL:
+#     pass
+
+# @strawberry.experimental.pydantic.type(
+#     model=MediaCredit, 
+#     all_fields=True)
+# class MediaCreditGQL:
+#     pass
+
+# @strawberry.experimental.pydantic.type(
+#     model=MediaContent, 
+#     all_fields=True)
+# class MediaContentGQL:
+#     pass
 
 
-@strawberry.experimental.pydantic.type(
-    model=Links, 
-    all_fields=True)
-class LinksGQL:
-    pass
+# @strawberry.experimental.pydantic.type(
+#     model=Links, 
+#     all_fields=True)
+# class LinksGQL:
+#     pass
 
-@strawberry.experimental.pydantic.type(
-    model=SummaryDetail, 
-    all_fields=True)
-class SummaryDetailGQL:
-    pass
+# @strawberry.experimental.pydantic.type(
+#     model=SummaryDetail, 
+#     all_fields=True)
+# class SummaryDetailGQL:
+#     pass
 
-@strawberry.experimental.pydantic.type(
-    model=RSS_Schema, 
-    all_fields=True)
-class RSS_SchemaGQL:
-    pass
+# @strawberry.experimental.pydantic.type(
+#     model=RssSchema, 
+#     all_fields=True)
+# class RssSchemaGQL:
+#     pass
 
 
