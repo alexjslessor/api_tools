@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "osint_tools"
-version = "0.3.0"
+version = "0.4.0"
 description = ""
 authors = ["Alexander Slessor <alexjslessor@gmail.com.com>"]
 readme = "README.md"
