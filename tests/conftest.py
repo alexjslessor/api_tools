@@ -6,19 +6,9 @@ from asgi_lifespan import LifespanManager
 from pydantic import *
 from pprint import pprint
 
-from osint_tools.rss import RSS_Schema, RSSFeed, EnumRSS
 from osint_tools.four_chan import *
-# from osint_tools.gpt_promptify import *
-# from osint_tools.translator.schema.schema import (
-    # TranslatorLangCodes, 
-    # TessLangCodes
-# )
-# from osint_tools.ocr_pdf import *
-
 from osint_tools.db import *
 from osint_tools.settings import get_settings
-# from osint_tools.entry_dev import app
-# from osint_tools.utils.utils import *
 
 settings = get_settings()
 mon_db = MongoCrud(settings.MONGO_URI, settings.MONGO_DB_NAME)
