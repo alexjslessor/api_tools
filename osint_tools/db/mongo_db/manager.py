@@ -1,6 +1,7 @@
 from typing import Any, Callable
 from pydantic import BaseModel, AnyUrl
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
+from motor.core import AgnosticDatabase
+from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import ( 
     InsertOne,
     ReplaceOne
@@ -21,7 +22,7 @@ class MongoCrud(object):
         client = AsyncIOMotorClient(uri, uuidRepresentation="standard")
         self.db = client[db_name]
 
-    def get_mongo_db(self) -> AsyncIOMotorDatabase:
+    def get_mongo_db(self) -> AgnosticDatabase:
         """async Motor db connection
 
         Returns:
@@ -34,7 +35,7 @@ class MongoCrud(object):
         return self.db
 
     @property
-    def get_db_name(self) -> Any:
+    def get_db_name(self) -> str:
         return self.db.name
 
     @property
@@ -59,11 +60,19 @@ class MongoCrud(object):
         res = await db.create_index(field, unique=True)
         return res
 
-    async def drop_collection(self, db, collection_name) -> Any:
+    async def drop_collection(
+        self, 
+        db: AgnosticDatabase, 
+        collection_name: str
+    ):
         dropped = await db.drop_collection(collection_name)
         return dropped
 
-    async def get_distinct(self, db: AsyncIOMotorDatabase, field: str) -> Any:
+    async def get_distinct(
+        self, 
+        db: AgnosticDatabase, 
+        field: str
+    ):
         """
         - Distinct values for a given key
 
@@ -88,9 +97,9 @@ class MongoCrud(object):
 
     async def delete_all(
         self, 
-        db,
+        db: AgnosticDatabase,
         obj: dict
-        ) -> Any:
+    ):
         try:
             return await db.delete_many(obj)
         except Exception as e:
@@ -98,11 +107,11 @@ class MongoCrud(object):
 
     async def insert_many_documents(
         self, 
-        db, 
-        collection_name, 
+        db: AgnosticDatabase, 
+        collection_name: str, 
         results: list, 
         is_testing: bool = False
-        ) -> Any:
+    ):
         '''
         https://pymongo.readthedocs.io/en/stable/examples/bulk.html#ordered-bulk-write-operations
         '''
@@ -119,23 +128,24 @@ class MongoCrud(object):
 
     async def _insert_docs_test(
         self,
-        db,
-        collection_name,
+        db: AgnosticDatabase,
+        collection_name: str,
         results: list,
-        ) -> Any:
+    ):
         result = await db[collection_name].insert_many(({'x': i} for i in range(2)))
         r = result.inserted_ids
         return r
 
     async def find_all(
         self, 
-        db, 
-        model=None,
-        _filter=None, 
-        _projection=None, 
-        as_dict=False,
-        skip=0, 
-        limit=0) -> list:
+        db: AgnosticDatabase, 
+        model = None,
+        _filter = None, 
+        _projection = None, 
+        as_dict: bool = False,
+        skip: int = 0, 
+        limit: int = 0
+    ) -> list:
         query = db.find(_filter, _projection, skip=0, limit=0)
         if model:
             if as_dict:
@@ -146,11 +156,11 @@ class MongoCrud(object):
 
     async def insert_or_update_many(
         self, 
-        db_from: AsyncIOMotorDatabase, 
-        db_to: AsyncIOMotorDatabase, 
+        db_from: AgnosticDatabase, 
+        db_to: AgnosticDatabase, 
         model: Callable, 
         _filter: dict = {}
-        ) -> Any:
+    ):
         assert issubclass(model, BaseModel)
         try:
             query = db_from.find(filter=_filter)
@@ -171,11 +181,11 @@ class MongoCrud(object):
 
     async def bulk_insert_one(
         self, 
-        db_from: AsyncIOMotorDatabase, 
-        db_to: AsyncIOMotorDatabase, 
+        db_from: AgnosticDatabase, 
+        db_to: AgnosticDatabase, 
         model: Callable, 
         _filter: dict = None
-        ) -> Any:
+    ):
         try:
             query = db_from.find(filter=_filter)
             requests = [
@@ -191,7 +201,12 @@ class MongoCrud(object):
             raise
 
 
-    async def aggregation(self, db, pipe_line: list, model: Callable = None) -> list:
+    async def aggregation(
+        self, 
+        db: AgnosticDatabase, 
+        pipe_line: list, 
+        model: Callable = None
+    ) -> list:
         try:
             cur = db.aggregate(pipe_line, allowDiskUse=True)
             if model:
@@ -203,9 +218,9 @@ class MongoCrud(object):
 
     async def create(
         self, 
-        db,
+        db: AgnosticDatabase,
         obj: dict
-        ):
+    ):
         try:
             result = await db.insert_one(obj)
             return result
@@ -214,10 +229,10 @@ class MongoCrud(object):
 
     async def update(
         self, 
-        db,
+        db: AgnosticDatabase,
         query_by: dict,
         update_by: dict, 
-        ):
+    ):
         # p. 207
         try:
             return await db.update_one(query_by, update_by)
@@ -227,7 +242,8 @@ class MongoCrud(object):
     async def delete(
         self, 
         obj: dict, 
-        db):
+        db: AgnosticDatabase
+    ):
         # p. 208
         try:
             return await db.delete_one(obj)
