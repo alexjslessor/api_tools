@@ -1,19 +1,29 @@
 import logging
-from os import environ
-
-def setup_logger(which_logger):
-    logging.basicConfig(
-        filename=environ.get('LOG_FILE_PATH'),# taken from loca .env file, not set in settings.py
-        format='%(asctime)s - %(process)d-%(levelname)s-%(funcName)s - %(message)s', 
-        datefmt='%d-%b-%y %H:%M:%S',
-        level=logging.INFO)
-    log = logging.getLogger(which_logger)
-    return log
 
 
-WHICH_LOGGER = environ.get('WHICH_LOGGER')
-# assert WHICH_LOGGER is not None, 'Set WHICH_LOGGER'
-logger = setup_logger(WHICH_LOGGER)
+def setup_logging(path: str = './osint_tools/logger.json') -> None:
+    '''Custom logger setup.
+
+    https://docs.python.org/3/library/logging.config.html
+    '''
+    import os.path
+    import json
+    import pathlib
+    try:
+        assert os.path.exists(path), f'Logging config file not found @: {path}'
+
+        conf_file = pathlib.Path(path)
+        with open(conf_file) as f_in:
+            config = json.load(f_in)
+
+        logging.config.dictConfig(config)
+
+    except AssertionError as e:
+        raise ValueError(e)
+    except Exception as e:
+        raise ValueError(f'Unknown error loading logger::{e!s}')
 
 
+setup_logging()
 
+logger = logging.getLogger('osint_tools')
