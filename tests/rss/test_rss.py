@@ -14,12 +14,12 @@ class TestRss:
         print(f'url1: {r.path}')
 
     def test_create_uids(self):
-        class URLModel(BaseModel):
+        class _URLModel(BaseModel):
             url: HttpUrl
 
-        def parse_url(url: str):
+        def _parse_url(url: str):
             try:
-                url_model = URLModel(url=url)
+                url_model = _URLModel(url=url)
                 parsed_url = urlparse(url_model.url)
                 idx = {
                     "scheme": parsed_url.scheme,
@@ -32,11 +32,12 @@ class TestRss:
                 print(idx)
             except Exception as e:
                 raise
-        parse_url(url1)
+
+        _parse_url(url1)
 
     def test_get_urls(self):
         urls = EnumRSS.list_name_or_value('value')
-        data = RssSchemaList.get_urls(urls)
+        data = RssSchemaList.from_url_list(urls, limit=2)
         assert data.rss_list, 'no rss list'
         return data
 
@@ -49,3 +50,20 @@ class TestRss:
             'rss',
             'article_id', 
         )
+
+    @pytest.mark.asyncio
+    async def test_to_db_v2(self):
+        urls = EnumRSS.list_name_or_value('value')
+        data = RssSchemaList.to_db_v2(
+            db=db,
+            urls=urls,
+            collection='rss',
+            filter_field='article_id',
+            limit=2
+        )
+        print('len: ', len(data.rss_list))
+        assert data.rss_list, 'no rss list'
+        # is_deleted = await db['rss'].delete_many({})
+        # print(f'is_Deleted: {is_deleted.deleted_count}')
+        is_updated = await data.bulk_create_or_update(db, 'rss')
+        print(f'is_updated: {is_updated}')

@@ -1,31 +1,39 @@
 from ..schemas import *
-# import json
-# import httpx
-import requests
+import httpx
 # import urllib.parse
 import urllib.request
-# import asyncio
-# import random
 from time import sleep
 import os.path
+import logging
+from osint_tools.settings import get_settings
+
+settings = get_settings()
+logger = logging.getLogger(settings.LOGGER_NAME)
 
 def get_catalog(board: Board, as_dict: bool = False) -> list[CatalogThread]:
-    url = f'https://a.4cdn.org/{Board[board]}/catalog.json'
-    data = requests.get(url).json()
-
-    all_posts: list[CatalogThread] = []
-    for page in data:
-        for thread in page['threads']:
-            '''attach board to thread'''
-            assert not isinstance(board, list), 'board should not be list'
-            thread['board'] = board
-            all_posts.append(CatalogThread(**thread))
-    return all_posts
+    try:
+        url = f'https://a.4cdn.org/{Board[board].value}/catalog.json'
+        logger.debug(f'{url!s}')
+        data = httpx.get(url).json()
+    except Exception as e:
+        raise ValueError(f'Error HTTP GET: {e!s}')
+    else:
+        try:
+            all_posts: list[CatalogThread] = []
+            for page in data:
+                for thread in page['threads']:
+                    '''attach board to thread'''
+                    assert not isinstance(board, list), 'board should not be list'
+                    thread['board'] = board
+                    all_posts.append(CatalogThread(**thread))
+            return all_posts
+        except Exception as e:
+            raise ValueError(f'Error parsing catalog: {e!s}')
 
 def catalog_image_generator(board: Board):
     # https://github.com/4chan/4chan-API/blob/master/pages/User_images_and_static_content.md
-    url = f'https://a.4cdn.org/{Board[board]}/catalog.json'
-    r = requests.get(url).json()
+    url = f'https://a.4cdn.org/{Board[board].value}/catalog.json'
+    r = httpx.get(url).json()
     lst = []
     for idx, page in enumerate(r):
         for thread in r[idx]['threads']:
@@ -48,6 +56,12 @@ def iter_img_lst(board, save_dir: str):
     https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Modified-Since
     If-Modified-Since: <day-name>, <day> <month> <year> <hour>:<minute>:<second> GMT
     e.g.:  Thu, 15 Dec 2022 03:51:47 GMT
+    
+    req = urllib.request.Request('http://www.example.com/')
+    req.add_header('Referer', 'http://www.python.org/')
+    # Customize the default User-Agent header value:
+    req.add_header('User-Agent', 'urllib-example/0.1 (Contact: . . .)')
+    r = urllib.request.urlopen(req)
     '''
     path = f'{save_dir}/'
     counter = 0
@@ -66,8 +80,3 @@ def iter_img_lst(board, save_dir: str):
             print(f'file exists: {file_name}')
             continue
 
-# req = urllib.request.Request('http://www.example.com/')
-# req.add_header('Referer', 'http://www.python.org/')
-# # Customize the default User-Agent header value:
-# req.add_header('User-Agent', 'urllib-example/0.1 (Contact: . . .)')
-# r = urllib.request.urlopen(req)

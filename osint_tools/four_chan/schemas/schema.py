@@ -1,9 +1,7 @@
-import strawberry
 from enum import Enum, auto
 from pydantic import BaseModel, Field
 from typing import Optional
 
-@strawberry.enum
 class Board(str, Enum):
     wg = 'wg'
     v = 'v'
@@ -63,7 +61,6 @@ class FourChanBase(BaseModel):
     # board: Board
     # last_replies: List[ImageField] = Field([], description='Reply Images.')
 
-@strawberry.enum
 class CapCode(str, Enum):
     # Not set = None
     mod = auto()
@@ -127,15 +124,3 @@ class CatalogBase(FourChanBase):
 class CatalogThread(CatalogBase):
     board: Board
     last_replies: list[CatalogBase] = Field([], description='Thread replies.')# catalog OP only | JSON representation of the most recent replies to a thread | array of JSON post objects")
-
-@strawberry.experimental.pydantic.type(
-    model=CatalogBase, 
-    all_fields=True)
-class CatalogBaseGQL:
-    pass
-
-@strawberry.experimental.pydantic.type(
-    model=CatalogThread, 
-    all_fields=True)
-class CatalogThreadGQL:
-    pass

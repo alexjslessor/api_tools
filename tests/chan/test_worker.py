@@ -1,28 +1,5 @@
-from ..conftest import *
-# from bson import ObjectId
+from tests.conftest import *
 from pymongo import ReplaceOne
-# async def test_update_chan():
-        # print('matched: ', update.matched_count)
-        # print('modified: ', update.modified_count)
-        # print('delete count: ', delete.deleted_count)
-        # query = {"board": {"$exists": True}}
-        # query = {'board': Board.pol.value}
-        # query = {"board": 'pol'}
-
-    # update = await db['4chan'].update_many(
-    #     {"board": {"$ne": "pol" }}, 
-    #     {'$push': {'board': Board.pol}},
-    #     upsert=True
-    # )
-    # update = await db['4chan'].update_many(
-    #     # {"board": {'$type': 'string'}},
-    #     # {'board': 'pol'},
-    #     {'$push': {'board': Board.pol}},
-    #     # upsert=True,
-    #     bypass_document_validation=True
-    # )
-    # delete = await db['4chan'].delete_many({"board": {'$type': 'string'}})
-    # pass
 
 TEST_COLLECTION: str = '4chan_test_collection'
 
@@ -33,11 +10,14 @@ class TestWorker:
         data = get_catalog(Board.pol)
         update = []
         for catalog_model in data:
-            update.append(ReplaceOne(
-                {'no': catalog_model.no}, catalog_model.dict(), upsert=True)
+            update.append(
+                ReplaceOne(
+                    {'no': catalog_model.no}, 
+                    catalog_model.dict(), 
+                    upsert=True)
             )
         assert len(update) >= 10, f'check update list len: {update}'
-        # pprint(update[:1])
+        logger.info(update[:1])
         return update
 
 
@@ -49,16 +29,16 @@ class TestWorker:
 
         result = await db[TEST_COLLECTION].bulk_write(update)
         assert result is not None, f'result is none'
-        # assert result.bulk_api_result['nModified'] > 0, 'none modified'
+
         assert result.bulk_api_result['writeErrors'] == [], 'has errors'
         assert result.bulk_api_result['writeConcernErrors'] == [], 'has write concerns'
-        print('')
-        print('nModified: ', result.bulk_api_result['nModified'])
-        print('nUpserted: ', result.bulk_api_result['nUpserted'])
-        print('nInserted: ', result.bulk_api_result['nInserted'])
-        print('nRemoved: ', result.bulk_api_result['nRemoved'])
-        print('nMatched: ', result.bulk_api_result['nMatched'])
-        print('upserted: ', result.bulk_api_result['upserted'])
+
+        logger.info(f'nModified: {result.bulk_api_result['nModified']!s}')
+        logger.info(f'nUpserted: {result.bulk_api_result['nUpserted']!s}')
+        logger.info(f'nInserted: {result.bulk_api_result['nInserted']!s}')
+        logger.info(f'nRemoved: {result.bulk_api_result['nRemoved']!s}')
+        logger.info(f'nMatched: {result.bulk_api_result['nMatched']!s}')
+        logger.info(f'upserted: {result.bulk_api_result['upserted']!s}')
 
 
 @pytest.mark.asyncio
