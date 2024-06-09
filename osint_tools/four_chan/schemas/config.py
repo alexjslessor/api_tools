@@ -3,8 +3,7 @@ from pydantic import BaseModel
 import bson
 import datetime
 
-# datetime_to_date = lambda t: t.isoformat(' ', 'hours').split(' ')[0]
-# datetime_to_str = lambda t: t.isoformat()
+
 datetime_to_unix_epoch = lambda x: x.timestamp()
 
 class BaseConfig(BaseModel):
