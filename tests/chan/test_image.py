@@ -1,4 +1,4 @@
-from ..conftest import *
+from tests.conftest import *
 from time import sleep
 
 class Test_Chan_Images:
