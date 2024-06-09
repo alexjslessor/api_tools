@@ -2,48 +2,15 @@ from .config import BaseConfig
 from enum import Enum, auto
 from typing import Optional
 import re
-from uuid import uuid4
-from pydantic import root_validator, Field, BaseModel
+from pydantic import root_validator, Field
 import feedparser
-from pymongo import ReplaceOne
+from pymongo import ReplaceOne, UpdateOne
 import pymongo
+from pymongo.errors import InvalidOperation
+from .fields import PyObjectId
+import logging
 
-'''
-published:  Fri, 04 Mar 2022 23:20:00 +0000
-published_parsed:  time.struct_time(tm_year=2022, tm_mon=3, tm_mday=4, tm_hour=23, tm_min=20, tm_sec=0, tm_wday=4, tm_yday=63, tm_isdst=0)
-authors:  [{'name': 'Tyler Durden'}]
-author:  Tyler Durden
-author_detail:  {'name': 'Tyler Durden'}
-id:  731160 at https://www.zerohedge.com
-guidislink:  False
-title:  Coinbase CEO: "Ordinary Russians Are Using Crypto As A Lifeline"
-title_detail:  {
-    'type': 'text/plain', 
-    'language': None, 
-    'base': 'https://cms.zerohedge.com/', 
-    'value': 'Coinbase CEO: "Ordinary Russians Are Using Crypto As A Lifeline"'}
-links:  [{'rel': 'alternate', 'type': 'text/html', 'href': 'https://www.zerohedge.com/crypto/coinbase-ceo-ordinary-russians-are-using-crypto-lifeline'}]
-link:  https://www.zerohedge.com/crypto/coinbase-ceo-ordinary-russians-are-using-crypto-lifeline
-summary:  <span class="field field--name-title field--type-string field--label-hidden">Coinbase CEO: "Ordinary Russians Are Using Crypto As A Lifeline"</span>
-
-[{'author': 'Tyler Durden',
-  'id': '733984 at https://www.zerohedge.com',
-  'link': 'https://www.zerohedge.com/political/photos-show-miami-beach-transformed-ghost-town-after-curfews',
-  'links': [{'href': 'https://www.zerohedge.com/political/photos-show-miami-beach-transformed-ghost-town-after-curfews',
-             'rel': 'alternate',
-             'type': 'text/html'}],
-  'published': 'Sun, 27 Mar 2022 18:00:00 +0000',
-  'title': "Photos Show Miami Beach Transformed Into Ghost Town After 'Spring "
-           "Break' Curfews"}]
-
-  'summary_detail': {'base': 'https://cms.zerohedge.com/',
-                     'language': None,
-                     'type': 'text/html',
-                     'value': '<span class="field field--name-title '
-                              'field--type-string field--label-hidden">How The '
-                              "West's Ban On Russian Gold Could "
-                              'Backfire</span>
-'''
+logger = logging.getLogger('osint_tools')
 
 class EnumBase(Enum):
     @classmethod
@@ -209,9 +176,9 @@ class SummaryDetail(TitleDetail):
     pass
 
 class RssSchema(BaseConfig):
-    id: str = Field(
-        default_factory=lambda: str(uuid4()), 
-        alias="_id")# type: ignore
+    id: PyObjectId = Field(
+        default_factory=PyObjectId, 
+        alias="_id")
     unique_id: Optional[str] = Field(
         default_factory=lambda: '',
         description='Compound idx; created from other fileds')
@@ -241,8 +208,8 @@ class RssSchema(BaseConfig):
         val['unique_id'] = str(val['rss_url']) + '-' + str(val['link'])
         return val
 
-class RssSchemaList(BaseModel):
-    rss_list: list[RssSchema] | list = []
+class RssSchemaList(BaseConfig):
+    rss_list: list[RssSchema] | list[UpdateOne] | list = []
 
     @staticmethod
     def _get_feed_static(url: str) -> list[RssSchema]:
@@ -259,12 +226,12 @@ class RssSchemaList(BaseModel):
         return rss
 
     @classmethod
-    def get_url(cls, url: str) -> list[RssSchema]:
+    def from_url(cls, url: str):
         rss_list = cls._get_feed_static(url)
         return cls(rss_list=rss_list)
 
     @classmethod
-    def get_urls(cls, urls: list[str], limit: int = -1):
+    def from_url_list(cls, urls: list[str], limit: int = -1):
         rss_list = []
         counter = 0
         for url in urls[:limit]:
@@ -273,12 +240,68 @@ class RssSchemaList(BaseModel):
             print(f'{counter} - {url}')
         return cls(rss_list=rss_list)
 
+    @classmethod
+    def to_db_v2(
+        cls,
+        db, 
+        urls: list[str],
+        collection: str, 
+        filter_field: str,
+        limit: int = -1,
+    ):
+        rss_list = []
+        counter = 0
+        for url in urls[:limit]:
+            feed = feedparser.parse(url)
+            for k in feed['entries']:
+                post = {}
+                # rename id, as it conflicts with _id
+                post['article_id'] = k.pop('id', '')
+                for k, v in k.items():
+                    post[k] = v
+                    post['rss_url'] = url
+
+                scheme = RssSchema(**post)
+                item = UpdateOne(
+                    filter={
+                        # "_id": scheme.id,
+                        filter_field: getattr(scheme, filter_field)
+                    }, 
+                    update={
+                        "$set": scheme.dict(by_alias=True, exclude={'id'})
+                    }, 
+                    upsert=True
+                )
+                rss_list.append(item)
+                counter += 1
+                print(f'{counter}: {url}')
+        return cls(rss_list=rss_list)
+
+    async def bulk_create_or_update(
+        self, 
+        db, 
+        collection: str
+    ) -> dict[str, str | int]:
+        try:
+            result = await db[collection].bulk_write(self.rss_list)
+        except InvalidOperation as e:
+            print(e)
+            raise
+        else:
+            return {
+                'collection': collection,
+                'nModified': result.bulk_api_result['nModified'],
+                'nUpserted': result.bulk_api_result['nUpserted'],
+                'nInserted': result.bulk_api_result['nInserted'],
+                'nMatched':  result.bulk_api_result['nMatched']
+            }
+
     async def to_db(
         self, 
         db,
         collection: str, 
         filter_field: str,
-        exclude: tuple[str] = {'id'}
+        exclude: set[str] = {'id'}
     ):
         update = []
         for article in self.rss_list:
@@ -300,60 +323,3 @@ class RssSchemaList(BaseModel):
             return True
         except pymongo.errors.BulkWriteError as e:
             raise
-
-# @strawberry.experimental.pydantic.type(
-#     model=Authors, 
-#     all_fields=True)
-# class AuthorsGQL:
-#     pass
-
-# @strawberry.experimental.pydantic.type(
-#     model=AuthorDetail, 
-#     all_fields=True)
-# class AuthorDetailGQL:
-#     pass
-
-# @strawberry.experimental.pydantic.type(
-#     model=TitleDetail, 
-#     all_fields=True)
-# class TitleDetailGQL:
-#     pass
-
-# @strawberry.experimental.pydantic.type(
-#     model=Tags, 
-#     all_fields=True)
-# class TagsGQL:
-#     pass
-
-# @strawberry.experimental.pydantic.type(
-#     model=MediaCredit, 
-#     all_fields=True)
-# class MediaCreditGQL:
-#     pass
-
-# @strawberry.experimental.pydantic.type(
-#     model=MediaContent, 
-#     all_fields=True)
-# class MediaContentGQL:
-#     pass
-
-
-# @strawberry.experimental.pydantic.type(
-#     model=Links, 
-#     all_fields=True)
-# class LinksGQL:
-#     pass
-
-# @strawberry.experimental.pydantic.type(
-#     model=SummaryDetail, 
-#     all_fields=True)
-# class SummaryDetailGQL:
-#     pass
-
-# @strawberry.experimental.pydantic.type(
-#     model=RssSchema, 
-#     all_fields=True)
-# class RssSchemaGQL:
-#     pass
-
-

@@ -4,21 +4,24 @@ source ./scripts/env.sh && dev_env_lib
 
 test_rss() {
     poetry run py.test -s tests/rss/test_rss.py
+    # poetry run py.test -s tests/rss/test_rss.py::TestRss::test_to_db
+    # poetry run py.test -s tests/rss/test_rss.py::TestRss::test_to_db_v2
 }
 test_chan() {
     # poetry run py.test -s tests/chan/test_chan_insert.py
     # poetry run py.test -s tests/chan/test_chan_insert.py::Test_Chan::test_get_insert_chan
-    # poetry run py.test -s tests/chan/test_worker.py
     # poetry run py.test -s tests/chan/test_read_chan_db.py::Test_Chan_DB::test_assert_board_is_string
     # poetry run py.test -s tests/chan/test_read_chan_db.py::Test_Chan_DB::test_assert_board_not_list
-    poetry run py.test -s tests/chan/test_worker.py::TestWorker
+
+    poetry run py.test -s tests/chan/test_worker.py
+    # poetry run py.test -s tests/chan/test_worker.py::TestWorker::test_replace_chan
+    # poetry run py.test -s tests/chan/test_worker.py::TestWorker
     # poetry run py.test -s tests/chan/test_worker.py::Test_4chan_Worker::test_replace_chan
 }
 test_chan_images() {
     poetry run py.test -s tests/chan/test_image.py
 }
 
-# test_llm
 # test_rss
 
 # test_chan
