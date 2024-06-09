@@ -1,4 +1,5 @@
-import logging
+import logging.config
+from osint_tools.settings import get_settings
 
 
 def setup_logging(path: str = './osint_tools/logger.json') -> None:
@@ -25,5 +26,5 @@ def setup_logging(path: str = './osint_tools/logger.json') -> None:
 
 
 setup_logging()
-
-logger = logging.getLogger('osint_tools')
+settings = get_settings()
+logger = logging.getLogger(settings.LOGGER_NAME)
